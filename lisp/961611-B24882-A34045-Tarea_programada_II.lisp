@@ -29,14 +29,29 @@
 ;; Potencia ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; TODO: documentacion estandar
-(defun potencia (C))
+(defun potencia (C)
+  (if (null C)
+      (list nil)
+      (let ((prev (powerset (cdr C))))
+  (append (mapcar #'(lambda (elt) (cons (car C) elt)) prev)
+    prev))))
 
 
 ;; Producto cartesiano ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Función auxiliar
+(defun distribuidor (m N)
+  (cond
+   ((null N) nil)
+   (t (cons (list m (car N))
+            (distribuidor m (cdr N))))))
+
 ;; TODO: documentacion estandar
 (defun cartesiano (A B))
-
+  (cond
+   ((null A) nil)
+   (t (append (distribuidor (car A) B)
+              (cartesiano (cdr A) B))))
 
 
 ;; La maquina encriptadora ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
