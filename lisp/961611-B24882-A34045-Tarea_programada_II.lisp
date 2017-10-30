@@ -33,11 +33,13 @@
 ;;
 ;; -->
 (defun potencia (C)
-  (if (null C)
-      (list nil)
-      (let ((prev (potencia (cdr C))))
-        (append (mapcar #'(lambda (elt) (cons (car C) elt)) prev)
-          prev))))
+  (cond ((null C) (list nil))
+        (t (let ((prev (potencia (cdr C))))
+             (append (mapcar #'(lambda (elt) (cons (car C) elt)) prev) prev)
+           )
+        )
+  )
+)
 
 ;; Producto cartesiano ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Produce el producto cartesiano de A y B (listas).
@@ -47,8 +49,13 @@
 ;; -->
 (defun cartesiano (A B)
   (cond((null A) nil)
-   (t (append (distribuidor (car A) B)
-              (cartesiano (cdr A) B)))))
+    (t (append (distribuidor (car A) B)
+              (cartesiano (cdr A) B)
+       )
+    )
+  )
+)
+
 
 ;; Función auxiliar
 ;; Crea una lista con las combinaciones de m y los elementos de N
@@ -57,10 +64,13 @@
 ;;
 ;; -->
 (defun distribuidor (m N)
-  (cond
-   ((null N) nil)
-   (t (cons (list m (car N))
-            (distribuidor m (cdr N))))))
+  (cond ((null N) nil)
+        (t (cons (list m (car N))
+             (distribuidor m (cdr N))
+           )
+        )
+  )
+)
 
 
 ;; La maquina encriptadora ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
