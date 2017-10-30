@@ -32,9 +32,9 @@
 (defun potencia (C)
   (if (null C)
       (list nil)
-      (let ((prev (powerset (cdr C))))
-  (append (mapcar #'(lambda (elt) (cons (car C) elt)) prev)
-    prev))))
+      (let ((prev (potencia (cdr C))))
+        (append (mapcar #'(lambda (elt) (cons (car C) elt)) prev)
+          prev))))
 
 
 ;; Producto cartesiano ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -47,11 +47,10 @@
             (distribuidor m (cdr N))))))
 
 ;; TODO: documentacion estandar
-(defun cartesiano (A B))
-  (cond
-   ((null A) nil)
+(defun cartesiano (A B)
+  (cond((null A) nil)
    (t (append (distribuidor (car A) B)
-              (cartesiano (cdr A) B))))
+              (cartesiano (cdr A) B)))))
 
 
 ;; La maquina encriptadora ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
