@@ -27,8 +27,11 @@
 
 
 ;; Potencia ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; TODO: documentacion estandar
+;; Produce el producto potencia de C (lista).
+;;
+;; Ejemplo: (potencia '(a b c)) -> (nil (a) (b) (c) (a b) (a c) (b c) (a b c))
+;;
+;; -->
 (defun potencia (C)
   (if (null C)
       (list nil)
@@ -36,21 +39,28 @@
         (append (mapcar #'(lambda (elt) (cons (car C) elt)) prev)
           prev))))
 
-
 ;; Producto cartesiano ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Produce el producto cartesiano de A y B (listas).
+;;
+;; Ejemplo:  (cartesiano '(a b c) '(d e)) -> ((a d) (a e) (b d) (b e) (c d) (c e))
+;;
+;; -->
+(defun cartesiano (A B)
+  (cond((null A) nil)
+   (t (append (distribuidor (car A) B)
+              (cartesiano (cdr A) B)))))
 
 ;; Función auxiliar
+;; Crea una lista con las combinaciones de m y los elementos de N
+;;
+;; Ejemplo:  (distribuidor 'a '(b c)) -> ((a b) (a c))
+;;
+;; -->
 (defun distribuidor (m N)
   (cond
    ((null N) nil)
    (t (cons (list m (car N))
             (distribuidor m (cdr N))))))
-
-;; TODO: documentacion estandar
-(defun cartesiano (A B)
-  (cond((null A) nil)
-   (t (append (distribuidor (car A) B)
-              (cartesiano (cdr A) B)))))
 
 
 ;; La maquina encriptadora ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
