@@ -89,7 +89,7 @@
 (defun encripta (H Ae As)
   (cond
     ; cuando llega al fin de la busqueda
-    ( (null H) (cons (last Ae)(last As)) )
+    ( (null H) (cons (list (car (last Ae)) (car (last As))) nil) )
 
     ; cuando el simbolo coincide con la cabeza del alfabeto de entrada
     ( (equal (car H)(car Ae)) (cons (car As) (encripta (cdr H)(rota Ae)(rota As))) )
