@@ -16,8 +16,27 @@
 
 ;; Busqueda por profundidad primero ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: documentacion estandar
-(defun bpp (N A))
+;(bpp n l) devuelve el subarbol de l cuya raız es n, nil si el subarbol no existe
+;El predicado implementa el metodo de busqueda en profundidad primero, y muestra la
+;secuencia de nodos visitados.
+;Validacion: n debe ser un atomo y l un arbol.
+;Ejemplo: (bpp 'd '(a b (c d e) (f (g h) i)))
+(defun bpp (n l)
+  (cond ((equal n (car l)) (and (print (cons 'RECORRIDO (cons n nil))) l )) ;es la raíz
+        (t (rama n (cdr l) (cons (car l) nil)))
+  )
+)
+;(rama n l) Recorre las ramas de los arboles en busca de una coincidencia, regresa un subarbol
+;del cual n es padre
+;Validacion: n debe ser un atomo y l un arbol.
+(defun rama (n l r)
+  (cond ((equal n (car l)) (and (print (cons 'RECORRIDO (cons r (cons (car l) nil)))) (car l) )) ;encontré y es hoja
+        ((null l) (and (print (cons 'RECORRIDO r)) 'NOENCONTRADO)) ;no lo encontré
+        ((and (listp (car l)) (equal n (car (car l)))) (and (print (cons 'RECORRIDO (cons r (cons (car (car l)) nil)))) (car l))) ;es el padre
+        ((listp (car l)) (rama n (append (car l) (cdr l)) r))
+        (t (rama n (cdr l) (append r (cons (car l) nil))))
+  )
+)
 
 
 ;; Busqueda anchura primero ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
