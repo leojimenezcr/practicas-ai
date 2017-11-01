@@ -41,8 +41,26 @@
 
 ;; Busqueda anchura primero ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO: documentacion estandar
-(defun bap (N A))
+;(bap n l) busca el elemento n en el arbol l y devuelve el subarbol
+;del cual es padre n, utilizando la busqueda por anchura primero
+;Validacion: n es un atomo y l es un arbol
+;(bap 'c (a b (c d e) (f (g h) i))) (c,d,e), recorrido abc
+(defun bap (n l)
+  (cond ((equal n (car l)) (and (print (cons 'RECORRIDO (cons n nil))) l ))
+        (t (rama2 n (cdr l) (cons (car l) nil)))
+  )
+)
+;(rama n l) Recorre las ramas de los arboles en busca de una coincidencia, regresa un subarbol
+;del cual n es padre
+;Validacion: n debe ser un atomo y l un arbol.
+(defun rama2 (n l r)
+    (cond ((equal n (car l)) (and (print (cons 'RECORRIDO (cons r (cons (car l) nil)))) (car l) )) ;encontré y es hoja
+          ((null l) (and (print (cons 'RECORRIDO r)) 'NOENCONTRADO)) ;no lo encontré
+          ((and (listp (car l)) (equal n (car (car l)))) (and (print (cons 'RECORRIDO (cons r (cons (car (car l)) nil)))) (car l)));encontre y es padre
+          ((listp (car l)) (rama2 n (append (cdr l) (cdr (car l))) (append r (cons (car (car l)) nil)))); no lo he encontrado rama nueva
+          (t (rama2 n (cdr l) (append r (cons (car l) nil)))); recorre el árbol
+    )
+)
 
 
 ;; Potencia ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
