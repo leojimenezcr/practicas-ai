@@ -44,7 +44,7 @@
 ;(bap n l) busca el elemento n en el arbol l y devuelve el subarbol
 ;del cual es padre n, utilizando la busqueda por anchura primero
 ;Validacion: n es un atomo y l es un arbol
-;(bap 'c (a b (c d e) (f (g h) i))) (c,d,e), recorrido abc
+;(bap 'c '(a b (c d e) (f (g h) i))) -> (c,d,e), recorrido abc
 (defun bap (n l)
   (cond ((equal n (car l)) (and (print (cons 'RECORRIDO (cons n nil))) l ))
         (t (rama2 n (cdr l) (cons (car l) nil)))
