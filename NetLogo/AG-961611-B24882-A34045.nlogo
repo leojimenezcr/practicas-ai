@@ -1,62 +1,57 @@
-;; Each potential solution is represented by a turtle.
+;; Cada tortuga representa una solucion potencial.
 
 turtles-own [
-  bits           ;; list of 0's and 1's
-  fitness
+  bits           ;; lista de 0's y 1's
+  fitness        ;; a mayor valor, mayor posibilidad de reproducirse
 ]
 
 globals [
-  winner         ;; turtle that currently has the best solution
-  f_parent1        ;;fitness padre elegido para crossover
-  f_parent2        ;;fitness padre elegido para crossover
-  diversidad      ;; diversidad en cada ciclo
+  winner         ;; la tortuga que tiene la mejor solucion
+  f_parent1      ;; fitness del primer padre elegido para crossover, para graficar
+  f_parent2      ;; fitness del segundo padre elegido para crossover, para graficar
+  diversidad     ;; diversidad en cada ciclo, para el registro
 ]
 
 to setup
   clear-all
   create-turtles population-size [
-    set bits n-values world-width [one-of [0 1]]
-    calculate-fitness
+    set bits n-values world-width [one-of [0 1]] ;; llena de 0's y 1's aleatoriamente
+    calculate-fitness  ;; calcula el valor del fitness
     hide-turtle  ;; the turtles' locations are not used, so hide them
   ]
-  set f_parent1 0
+  set f_parent1 0 ;; inicializa el valor de fitness de los padres
   set f_parent2 0
 
-  update-display
+  update-display ;; dibuja los bits de la tortuga con mayor fitness
   let archivo user-new-file
-  ;; We check to make sure we actually got a string just in case
-  ;; the user hits the cancel button.
+  ;; Confirma que el usuario escribio una hilera y no presiono 'Cancelar'
   if is-string? archivo
   [
-    ;; If the file already exists, we begin by deleting it, otherwise
-    ;; new data would be appended to the old contents.
+    ;; Si el archivo existe lo elimina
     if file-exists? archivo
       [ file-close file-delete archivo ]
-    file-open archivo
+    file-open archivo ;; abre el archivo
   ]
-  ;let ruta_archivo "/home/Daniel/Documentos/Paradigmas/Proyecto/registro.txt"
-  ;if file-exists? ruta_archivo
-  ;  [file-close file-delete ruta_archivo]
-  ;file-open ruta_archivo
   reset-ticks
 end
 
 to go
-  if [fitness] of winner = world-width
-    [ stop ]
-  if [fitness] of winner = world-width
-    [ file-close ]
+  if [fitness] of winner = world-width ;; Cuando el valor de fitness es igual al tamano del arreglo de bits,
+    [ file-close                       ;; cierra el archivo de registro
+      stop ]                           ;; y se detiene
   create-next-generation
-  update-display
-  update-register
+  update-display ;; dibuja los bits de la tortuga con mayor fitness
+  update-register ;; anade los valores al archivo de registro
   tick
 end
 
+;; anade los valores al archivo de registro
 to update-register
   file-print (word "Ciclo: " ticks " ---Peor aptitud: " min [fitness] of turtles " ---Aptitud promedio: " mean [fitness] of turtles " ---Mejor aptitud: " max [fitness] of turtles " ---Diversidad: " diversidad)
   file-print ""
 end
 
+;; dibuja los bits de la tortuga con mayor fitness
 to update-display
   set winner max-one-of turtles [fitness]
   ask patches [
@@ -81,8 +76,8 @@ to calculate-fitness       ;; turtle procedure
   ;; to evaluate the bits in other ways.  For instance, the bits might
   ;; encode rules for how a turtle should move across the world in a search for food.
   ifelse fitness-function?
-  [set fitness 100 - abs (length (remove 1 bits) - length (remove 0 bits))]
-  [set fitness length (remove 0 bits)]
+  [set fitness 100 - abs (length (remove 1 bits) - length (remove 0 bits))] ;; le da mas valor a la tortuga con mas diversidad (cantidad similar de 1's y 0's)
+  [set fitness length (remove 0 bits)] ;; le da mas valor a la tortuga con mas 1's
 
 end
 
@@ -368,7 +363,7 @@ SWITCH
 301
 plot-diversity?
 plot-diversity?
-1
+0
 1
 -1000
 
@@ -415,10 +410,10 @@ PLOT
 532
 535
 Parents Fitness Plot
-gen
+gen #
 fitness
 0.0
-100.0
+20.0
 0.0
 100.0
 true
