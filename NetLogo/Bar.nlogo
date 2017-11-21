@@ -4,44 +4,97 @@ globals
   mesa2
   mesa3
   mesa4
+  mesa5
+  mesa6
+  mesa7
+  mesas
+  no-mesas
   baño
   caja
 ]
 
+turtles-own
+[
+  consumidor         ;; 1 si la tortuga es de tipo consumidor, 0 si es empleado
+]
+
+patches-own
+[
+  libre              ;; 1 si está vacio, 0 si no
+]
+
 to setup
   clear-all
-  ask patches [set pcolor brown + 3]
-  ;; crear las mesas
-  set mesa1 patches with [(pxcor >= -13 and pxcor <= -9) and (pycor >= 0 and pycor <= 4)]
-  ask mesa1 [ set pcolor blue ]
+  ask patches
+  [
+    set pcolor brown + 3
+    set libre 1
+  ]
+  set-default-shape turtles "person"
 
-  set mesa2 patches with [pxcor >= -13 and pxcor <= -9 and pycor >= 10 and pycor <= 14]
-  ask mesa2 [set pcolor blue]
+  ;; crear las mesas
+  set mesa1 patches with [(pxcor >= -13 and pxcor <= -8) and (pycor >= 0 and pycor <= 4)]
+  ask mesa1 [set libre 0]
+  set mesa2 patches with [pxcor >= -13 and pxcor <= -8 and pycor >= 10 and pycor <= 14]
+  ask mesa2 [set libre 0]
+  set mesa3 patches with [pxcor >= -4 and pxcor <= 1 and pycor >= 10 and pycor <= 14]
+  ask mesa3 [set libre 0]
+  set mesa4 patches with [pxcor >= -3 and pxcor <= 2 and pycor >= 0 and pycor <= 4]
+  ask mesa4 [set libre 0]
+  set mesa5 patches with [pxcor >= 8 and pxcor <= 12 and pycor >= 0 and pycor <= 4]
+  ask mesa5 [set libre 0]
+  set mesa6 patches with [pxcor >= -13 and pxcor <= -6 and pycor >= -9 and pycor <= -4]
+  ask mesa6 [set libre 0]
+  set mesa7 patches with [pxcor >= -1 and pxcor <= 6 and pycor >= -9 and pycor <= -4]
+  ask mesa7 [set libre 0]
+
+  ;; crear la caja
+  set caja patches with [pxcor >= 13 and pxcor <= 16 and pycor >= -14 and pycor <= -6]
+  ask caja [set pcolor red]
+
+  ;; agrupar las mesas
+  set mesas (patches with [libre = 0])
+  set no-mesas patches with [(not member? self mesas) and (not member? self caja)]
+
+  ask mesas [set pcolor blue]
 
   ;; crear el baños
   set baño patches with [(pxcor >= 10 and pxcor <= 16) and (pycor >= 10 and pycor <= 16)]
   ask baño [ set pcolor green ]
 
-  ;; crear la caja
-  set caja patches with [pxcor >= 13 and pxcor <= 16 and pycor >= -14 and pycor <= -6]
-  ask caja [set pcolor red]
-  ;set caja patches with [(pxcor > 10 and pxcor < 15) and (pycor > -8 and pycor < -10)]
-  ;ask caja [ set pcolor red ]
+  ;; crear los empleados
+  create-turtles 3
+  [
+    set consumidor 0
+    set color yellow
+    mover-a-un-espacio-vacio-de no-mesas ;;or mesa2 or mesa3 or mesa4 or mesa5 or mesa6 or mesa7 or baño or caja))
+  ]
+
+  ;; crear los consumidores
+  create-turtles 15
+  [
+    set consumidor 1
+    set color black
+    mover-a-un-espacio-vacio-de no-mesas ;;or mesa2 or mesa3 or mesa4 or mesa5 or mesa6 or mesa7 or baño or caja))
+  ]
 
   ;create-turtles 100 [ setxy random-xcor random-ycor ]
   reset-ticks
 end
 
 to go
-  ;move-turtles
   tick
 end
 
-to move-turtles
-  ask turtles
-  [
-    right random 360
-    forward 1
+;; In this model it doesn't really matter exactly which patch
+;; a turtle is on, only whether the turtle is in the home area
+;; or the bar area.  Nonetheless, to make a nice visualization
+;; this procedure is used to ensure that we only have one
+;; turtle per patch.
+to mover-a-un-espacio-vacio-de [espacios]  ;; turtle procedure
+  move-to one-of espacios
+  while [any? other turtles-here] [
+    move-to one-of espacios
   ]
 end
 @#$#@#$#@
