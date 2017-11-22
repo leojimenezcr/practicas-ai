@@ -67,7 +67,7 @@ to setup
   [
     set consumidor 0
     set color yellow
-    mover-a-un-espacio-vacio-de no-mesas ;;or mesa2 or mesa3 or mesa4 or mesa5 or mesa6 or mesa7 or baño or caja))
+    mover-a-un-espacio-vacio-de no-mesas
   ]
 
   ;; crear los consumidores
@@ -75,7 +75,7 @@ to setup
   [
     set consumidor 1
     set color black
-    mover-a-un-espacio-vacio-de no-mesas ;;or mesa2 or mesa3 or mesa4 or mesa5 or mesa6 or mesa7 or baño or caja))
+    mover-a-un-espacio-vacio-de no-mesas
   ]
 
   ;create-turtles 100 [ setxy random-xcor random-ycor ]
