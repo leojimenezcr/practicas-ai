@@ -31,6 +31,7 @@ to setup
     if file-exists? archivo
       [ file-close file-delete archivo ]
     file-open archivo ;; abre el archivo
+    file-print (word "Ciclo,Peor aptitud,Aptitud promedio,Mejor aptitud,Diversidad")
   ]
   reset-ticks
 end
@@ -47,8 +48,7 @@ end
 
 ;; anade los valores al archivo de registro
 to update-register
-  file-print (word "Ciclo: " ticks " ---Peor aptitud: " min [fitness] of turtles " ---Aptitud promedio: " mean [fitness] of turtles " ---Mejor aptitud: " max [fitness] of turtles " ---Diversidad: " diversidad)
-  file-print ""
+  file-print (word ticks "," precision (min [fitness] of turtles) 3 "," precision (mean [fitness] of turtles) 3 "," precision (max [fitness] of turtles) 3 "," precision diversidad 3)
 end
 
 ;; dibuja los bits de la tortuga con mayor fitness
@@ -76,7 +76,7 @@ to calculate-fitness       ;; turtle procedure
   ;; to evaluate the bits in other ways.  For instance, the bits might
   ;; encode rules for how a turtle should move across the world in a search for food.
   ifelse fitness-function?
-  [set fitness 100 - abs (length (remove 1 bits) - length (remove 0 bits))] ;; le da mas valor a la tortuga con mas diversidad (cantidad similar de 1's y 0's)
+  [set fitness 100 - abs length (remove 1 bits) - length (remove 0 bits)] ;; le da mas valor a la tortuga con mas diversidad (cantidad similar de 1's y 0's)
   [set fitness length (remove 0 bits)] ;; le da mas valor a la tortuga con mas 1's
 
 end
@@ -331,9 +331,9 @@ SLIDER
 mutation-rate
 mutation-rate
 0
-10
+1
+0.09
 0.01
-0.1
 1
 NIL
 HORIZONTAL
@@ -376,7 +376,7 @@ crossover-rate
 crossover-rate
 0
 100
-53.0
+30.0
 1
 1
 NIL
@@ -389,7 +389,7 @@ SWITCH
 341
 fitness-function?
 fitness-function?
-1
+0
 1
 -1000
 
@@ -823,6 +823,31 @@ NetLogo 6.0.2
 need-to-manually-make-preview-for-this-model
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="experiment" repetitions="1" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>count turtles</metric>
+    <enumeratedValueSet variable="plot-parents-fitness?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="fitness-function?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="crossover-rate">
+      <value value="30"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="mutation-rate">
+      <value value="0.09"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="population-size">
+      <value value="190"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="plot-diversity?">
+      <value value="true"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
