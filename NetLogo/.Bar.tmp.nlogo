@@ -116,7 +116,7 @@ to buscar-mesa
     ask espacio-escogido [set libre 0]
     move-to espacio-escogido
   ]
-  [move-to one-of mesas]
+  [move-to one-of nomesas]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
