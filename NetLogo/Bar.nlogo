@@ -164,10 +164,10 @@ NIL
 1
 
 BUTTON
-108
-29
-171
-62
+179
+30
+242
+63
 NIL
 go
 T
@@ -209,6 +209,33 @@ cantidad-de-consumidores
 1
 NIL
 HORIZONTAL
+
+TEXTBOX
+145
+366
+295
+456
+Consumidor: negro\nEmpleado: amarillo\n\nMesas: azul\nCaja: rojo\nBaño: verde
+12
+0.0
+1
+
+BUTTON
+98
+30
+162
+63
+step
+go
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
