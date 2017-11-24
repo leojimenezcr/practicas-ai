@@ -516,9 +516,18 @@ Otro tipo de selección para la reproducción que a veces se usa en algoritmos g
 
 Como se señaló anteriormente, el problema "TODOS UNOS" es un problema de juguete que no es muy interesante en sí mismo. Una extensión natural de este modelo es utilizar el algoritmo genético para resolver un problema que es significativamente más interesante. Afortunadamente, puede cambiar el problema que el algoritmo genético está resolviendo modificando solo una cosa, la "función de aptitud", que evalúa qué tan buena es una secuencia de bits dada para resolver cualquier problema que intente resolver. Por ejemplo, podrías desarrollar reglas sobre cómo debería moverse una tortuga para maximizar su colección de alimentos a medida que viaja por el mundo. Para hacerlo, puedes cambiar el procedimiento `ga-calculate-fitness` para ejecutar una pequeña simulación donde una tortuga se mueve en el mundo (de acuerdo con algunas reglas que están definidas por la cadena de "1"s y "0"s), cuente la cantidad de comida que recolecta la tortuga, y luego configure la aptitud de acuerdo a esto.
 
-## Experimentación
+## Gráficos
 
-Se ejecutaron cinco simulaciones con la función de aptitud original y cinco simulaciones usando diferentes valores para las tasas de cruce (crossover-rate) y para la mutación (mutation-rate).
+Se ejecutaron cinco simulaciones con la función de aptitud original y cinco simulaciones usando una nueva función.
+
+La siguiente gráfica muestra los resultados al ejecutar la función original. En el eje y se muestran los valores utilizados de la forma (crossover-rate, mutation-rate):
+
+![Función original](https://github.com/leojimenezcr/practicas-ai/raw/master/NetLogo/Registros/originales.png)
+
+
+La siguiente gráfica muestra los resultados al ejecutar la nueva función. En el eje y se muestran los valores utilizados de la forma (crossover-rate, mutation-rate):
+
+![Nueva función](https://github.com/leojimenezcr/practicas-ai/raw/master/NetLogo/Registros/nuevos.png)
 
 ## Créditos y referencias
 
