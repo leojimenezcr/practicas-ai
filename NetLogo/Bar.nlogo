@@ -16,6 +16,19 @@ globals
 breed[consumidores consumidor]
 breed[empleados empleado]
 
+consumidores-own
+[
+  estado                       ;;"Buscando mesa", "Socializando", "Llendo al baño", "Esperando ser atendido"
+  satisfaccion
+  tolerancia
+  cuota-cervezas
+]
+
+empleados-own
+[
+  espera-limpiar-baño
+]
+
 patches-own
 [
   libre              ;; 1 si está vacio, 0 si no
@@ -43,9 +56,13 @@ to setup
   set caja patches with [pxcor >= 11 and pxcor <= 14 and pycor >= -13 and pycor <= -5]
   ask caja [set pcolor red]
 
+  ;; crear el baños
+  set baño patches with [(pxcor >= 8 and pxcor <= 14) and (pycor >= 8 and pycor <= 14)]
+  ask baño [ set pcolor green ]
+
   ;; agrupar las mesas
   set mesas (patch-set mesa1 mesa2 mesa3 mesa4 mesa5 mesa6 mesa7)
-  set no-mesas patches with [(not member? self mesas) and (not member? self caja) and not (count neighbors != 8)]
+  set no-mesas patches with [(not member? self mesas) and (not member? self caja) and not (count neighbors != 8) and (not member? self baño)]
 
   ask mesas
   [
@@ -53,20 +70,22 @@ to setup
     set libre 1
   ]
 
-  ;; crear el baños
-  set baño patches with [(pxcor >= 8 and pxcor <= 14) and (pycor >= 8 and pycor <= 14)]
-  ask baño [ set pcolor green ]
-
   ;;  This will make the outermost patches blue.  This is to prevent the turtles
   ;;  from wrapping around the world.  Notice it uses the number of neighbor patches rather than
   ;;  a location. This is better because it will allow you to change the behavior of the turtles
   ;; by changing the shape of the world (and it is less mistake-prone)
   ask patches with [count neighbors != 8] [ set pcolor blue ]
 
+  ask patches with [pycor = 8 and pxcor >= 8 and pxcor <= 14] [set pcolor blue]
+  ask patches with [pycor = 14 and pxcor >= 8 and pxcor <= 14] [set pcolor blue]
+  ask patches with [pxcor = 8 and pycor >= 8 and pycor <= 14] [set pcolor blue]
+  ask patches with [pxcor = 14 and pycor >= 8 and pycor <= 14] [set pcolor blue]
+
   ;; crear los empleados
   create-empleados cantidad-de-empleados
   [
     set color yellow
+    set espera-limpiar-baño 0
     mover-a-un-espacio-vacio-de no-mesas
   ]
 
@@ -74,6 +93,9 @@ to setup
   create-consumidores cantidad-de-consumidores
   [
     set color black
+    set tolerancia 80
+    set satisfaccion 80
+    set estado "Buscando mesa"
     mover-a-un-espacio-vacio-de no-mesas
   ]
   reset-ticks
@@ -81,7 +103,24 @@ end
 
 to go
   caminar consumidores
+  actualizar-satisfaccion
+  eliminar-insatisfechos
   tick
+end
+
+to actualizar-satisfaccion
+  let consumidores-buscando-mesa consumidores with [estado = "Buscando mesa"]
+  if any? consumidores-buscando-mesa
+  [
+    if ticks mod 10 = 0
+    [ask consumidores-buscando-mesa [set satisfaccion satisfaccion - 4]]
+  ]
+end
+
+to eliminar-insatisfechos
+  let consumidores-insatisfechos consumidores with [satisfaccion <= 30]
+  if any? consumidores-insatisfechos
+  [ask consumidores-insatisfechos [die]]
 end
 
 ;; In this model it doesn't really matter exactly which patch
@@ -118,6 +157,8 @@ to caminar [grupo]
     ;; Buscar mesa
     buscar-mesa
   ]
+  ;if ticks mod 10 = 0 and ticks > 0
+  ;[set satisfaccion satisfaccion - 1]
 end
 
 to buscar-mesa
@@ -127,14 +168,15 @@ to buscar-mesa
     let espacio-escogido one-of vecinos-vacios
     ask espacio-escogido [set libre 0]
     move-to espacio-escogido
+    ask self [set estado "Esperando ser atendido"]
   ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 322
 10
-776
-465
+829
+518
 -1
 -1
 13.52
@@ -147,10 +189,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--16
-16
--16
-16
+-18
+18
+-18
+18
 1
 1
 1
