@@ -32,20 +32,20 @@ to setup
 
   ;; crear las mesas
   set mesa1 patches with [(pxcor >= -13 and pxcor <= -8) and (pycor >= 0 and pycor <= 4)]
-  set mesa2 patches with [pxcor >= -13 and pxcor <= -8 and pycor >= 10 and pycor <= 14]
-  set mesa3 patches with [pxcor >= -4 and pxcor <= 1 and pycor >= 10 and pycor <= 14]
+  set mesa2 patches with [pxcor >= -13 and pxcor <= -8 and pycor >= 9 and pycor <= 13]
+  set mesa3 patches with [pxcor >= -4 and pxcor <= 1 and pycor >= 9 and pycor <= 13]
   set mesa4 patches with [pxcor >= -3 and pxcor <= 2 and pycor >= 0 and pycor <= 4]
   set mesa5 patches with [pxcor >= 8 and pxcor <= 12 and pycor >= 0 and pycor <= 4]
   set mesa6 patches with [pxcor >= -13 and pxcor <= -6 and pycor >= -9 and pycor <= -4]
   set mesa7 patches with [pxcor >= -1 and pxcor <= 6 and pycor >= -9 and pycor <= -4]
 
   ;; crear la caja
-  set caja patches with [pxcor >= 13 and pxcor <= 16 and pycor >= -14 and pycor <= -6]
+  set caja patches with [pxcor >= 11 and pxcor <= 14 and pycor >= -13 and pycor <= -5]
   ask caja [set pcolor red]
 
   ;; agrupar las mesas
   set mesas (patch-set mesa1 mesa2 mesa3 mesa4 mesa5 mesa6 mesa7)
-  set no-mesas patches with [(not member? self mesas) and (not member? self caja)]
+  set no-mesas patches with [(not member? self mesas) and (not member? self caja) and not (count neighbors != 8)]
 
   ask mesas
   [
@@ -54,8 +54,14 @@ to setup
   ]
 
   ;; crear el baños
-  set baño patches with [(pxcor >= 10 and pxcor <= 16) and (pycor >= 10 and pycor <= 16)]
+  set baño patches with [(pxcor >= 8 and pxcor <= 14) and (pycor >= 8 and pycor <= 14)]
   ask baño [ set pcolor green ]
+
+  ;;  This will make the outermost patches blue.  This is to prevent the turtles
+  ;;  from wrapping around the world.  Notice it uses the number of neighbor patches rather than
+  ;;  a location. This is better because it will allow you to change the behavior of the turtles
+  ;; by changing the shape of the world (and it is less mistake-prone)
+  ask patches with [count neighbors != 8] [ set pcolor blue ]
 
   ;; crear los empleados
   create-empleados cantidad-de-empleados
@@ -70,12 +76,11 @@ to setup
     set color black
     mover-a-un-espacio-vacio-de no-mesas
   ]
-  ask turtles [set label (count neighbors with [member? self mesas with [libre = 1]])]
   reset-ticks
 end
 
 to go
-  ask consumidores [mover]
+  caminar consumidores
   tick
 end
 
@@ -96,22 +101,32 @@ to mover-a-un-espacio-vacio-de [espacios]  ;; turtle procedure
   ]
 end
 
-to mover
-  if not member? patch-here mesas
-  [buscar-mesa]
+to caminar [grupo]
+  ;; Basado del ejemplo de codigo "Look Ahead Example" de la Boblioteca de Modelos de NetLogo
+  ask grupo
+  [
+    ;;  This important conditional determines if they are about to walk into a blue
+    ;;  patch.  It lets us make a decision about what to do BEFORE the turtle walks
+    ;;  into a blue patch.  This is a good way to simulate a wall or barrier that turtles
+    ;;  cannot move onto.  Notice that we don't use any information on the turtle's
+    ;;  heading or position.  Remember, patch-ahead 1 is the patch the turtle would be on
+    ;;  if it moved forward 1 in its current heading.
+    ifelse [pcolor] of patch-ahead 1 = blue or [pcolor] of patch-ahead 1 = red or [pcolor] of patch-here = blue
+    [ lt random-float 360 ]   ;; We see a blue patch in front of us. Turn a random amount.
+    [ fd 1 ]                  ;; Otherwise, it is safe to move forward.
+
+    ;; Buscar mesa
+    buscar-mesa
+  ]
 end
 
 to buscar-mesa
-  while [not member? patch-here mesas]
+  let vecinos-vacios neighbors with [member? self mesas with [libre = 1]]
+  if any? vecinos-vacios
   [
-    let vecinos-vacios neighbors with [member? self mesas with [libre = 1]]
-    ifelse any? vecinos-vacios
-    [
-      let espacio-escogido one-of vecinos-vacios
-      ask espacio-escogido [set libre 0]
-      move-to espacio-escogido
-    ]
-    [mover-a-un-espacio-vacio-de (no-mesas with [libre = 1])]
+    let espacio-escogido one-of vecinos-vacios
+    ask espacio-escogido [set libre 0]
+    move-to espacio-escogido
   ]
 end
 @#$#@#$#@
@@ -129,8 +144,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 -16
 16
