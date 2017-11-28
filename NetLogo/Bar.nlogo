@@ -16,11 +16,6 @@ globals
 breed[consumidores consumidor]
 breed[empleados empleado]
 
-;turtles-own
-;[
-;  consumidor         ;; 1 si la tortuga es de tipo consumidor, 0 si es empleado
-;]
-
 patches-own
 [
   libre              ;; 1 si está vacio, 0 si no
@@ -37,19 +32,12 @@ to setup
 
   ;; crear las mesas
   set mesa1 patches with [(pxcor >= -13 and pxcor <= -8) and (pycor >= 0 and pycor <= 4)]
-  ;ask mesa1 [set libre 0]
   set mesa2 patches with [pxcor >= -13 and pxcor <= -8 and pycor >= 10 and pycor <= 14]
-  ;ask mesa2 [set libre 0]
   set mesa3 patches with [pxcor >= -4 and pxcor <= 1 and pycor >= 10 and pycor <= 14]
-  ;ask mesa3 [set libre 0]
   set mesa4 patches with [pxcor >= -3 and pxcor <= 2 and pycor >= 0 and pycor <= 4]
-  ;ask mesa4 [set libre 0]
   set mesa5 patches with [pxcor >= 8 and pxcor <= 12 and pycor >= 0 and pycor <= 4]
-  ;ask mesa5 [set libre 0]
   set mesa6 patches with [pxcor >= -13 and pxcor <= -6 and pycor >= -9 and pycor <= -4]
-  ;ask mesa6 [set libre 0]
   set mesa7 patches with [pxcor >= -1 and pxcor <= 6 and pycor >= -9 and pycor <= -4]
-  ;ask mesa7 [set libre 0]
 
   ;; crear la caja
   set caja patches with [pxcor >= 13 and pxcor <= 16 and pycor >= -14 and pycor <= -6]
@@ -82,7 +70,7 @@ to setup
     set color black
     mover-a-un-espacio-vacio-de no-mesas
   ]
-
+  ask turtles [set label (count neighbors with [member? self mesas with [libre = 1]])]
   reset-ticks
 end
 
@@ -97,9 +85,14 @@ end
 ;; this procedure is used to ensure that we only have one
 ;; turtle per patch.
 to mover-a-un-espacio-vacio-de [espacios]  ;; turtle procedure
-  move-to one-of espacios
-  while [any? other turtles-here] [
-    move-to one-of espacios
+  if any? espacios
+  [
+    ;move-to one-of espacios
+    while [any? other turtles-here] [
+      let espacio-escogido one-of espacios
+      ask espacio-escogido [set libre 0]
+      move-to espacio-escogido
+    ]
   ]
 end
 
@@ -109,14 +102,17 @@ to mover
 end
 
 to buscar-mesa
-  let espacios-vacios-en-mesas neighbors with [member? self (mesas with [libre = 1])]
-  ifelse any? espacios-vacios-en-mesas
+  while [not member? patch-here mesas]
   [
-    let espacio-escogido one-of espacios-vacios-en-mesas
-    ask espacio-escogido [set libre 0]
-    move-to espacio-escogido
+    let vecinos-vacios neighbors with [member? self mesas with [libre = 1]]
+    ifelse any? vecinos-vacios
+    [
+      let espacio-escogido one-of vecinos-vacios
+      ask espacio-escogido [set libre 0]
+      move-to espacio-escogido
+    ]
+    [mover-a-un-espacio-vacio-de (no-mesas with [libre = 1])]
   ]
-  [move-to one-of mesas]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
