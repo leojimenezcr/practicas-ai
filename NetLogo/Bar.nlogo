@@ -11,6 +11,9 @@ globals
   no-mesas
   baño
   caja
+  asistencia-baño
+  limpieza-baño
+  crowded-patch     ;; patch where we show the "CROWDED" label
 ]
 
 breed[consumidores consumidor]
@@ -59,6 +62,17 @@ to setup
   ;; crear el baños
   set baño patches with [(pxcor >= 8 and pxcor <= 14) and (pycor >= 8 and pycor <= 14)]
   ask baño [ set pcolor green ]
+  set asistencia-baño 0
+  set limpieza-baño 10
+
+  ;; use one of the patch labels to visually indicate whether or not the
+  ;; bar is "crowded"
+  ;set crowded-patch patches with [pxcor >= 10 and pxcor <= 12 and pycor >= 10 and pycor <= 12]
+  ;ask crowded-patch [set plabel-color red]
+  ask patch (0.70 * max-pxcor) (0.70 * max-pycor) [
+    set crowded-patch self
+    set plabel-color red
+  ]
 
   ;; agrupar las mesas
   set mesas (patch-set mesa1 mesa2 mesa3 mesa4 mesa5 mesa6 mesa7)
@@ -96,16 +110,51 @@ to setup
     set tolerancia 80
     set satisfaccion 80
     set estado "Buscando mesa"
+    set cuota-cervezas random 10
     mover-a-un-espacio-vacio-de no-mesas
   ]
+
+  ask consumidores [set label cuota-cervezas]
+
   reset-ticks
 end
 
 to go
+  ask crowded-patch [ set plabel "" ]
   caminar consumidores
+  ir-al-baño
   actualizar-satisfaccion
   eliminar-insatisfechos
   tick
+end
+
+;; Dirige al agente hacia el baño de manera natural, un paso a la vez
+;; En implementación
+;; Basado en el ejemplo de codigo de la Biblioteca de Modelos llamado "Move Towards Target"
+to mover-al-baño
+  let blanco one-of baño
+  face blanco
+  ifelse distance blanco < 1
+      [ move-to blanco ]
+      [ fd 1 ]
+end
+
+to ir-al-baño
+  let por-ir-al-baño consumidores with [cuota-cervezas > 4]
+  if any? por-ir-al-baño
+  [
+    ask por-ir-al-baño [if asistencia-baño < 6 [(move-to one-of baño) (set asistencia-baño asistencia-baño + 1) (set limpieza-baño limpieza-baño - 1)]]
+  ]
+  let consumidores-en-baño consumidores with [member? patch-here baño]
+  ;; if the bar is crowded indicate that in the view
+  ;set asistencia-baño count turtles-on baño
+  if asistencia-baño > 5 [
+    ask crowded-patch [ set plabel "Lleno" ]
+  ]
+  if any? consumidores-en-baño
+  [
+    ask consumidores-en-baño [(mover-a-un-espacio-vacio-de mesas) (set cuota-cervezas 0) (set asistencia-baño asistencia-baño - 1)]
+  ]
 end
 
 to actualizar-satisfaccion
@@ -133,7 +182,7 @@ to mover-a-un-espacio-vacio-de [espacios]  ;; turtle procedure
   [
     ;move-to one-of espacios
     while [any? other turtles-here] [
-      let espacio-escogido one-of espacios
+      let espacio-escogido one-of espacios with [libre = 1]
       ask espacio-escogido [set libre 0]
       move-to espacio-escogido
     ]
@@ -153,6 +202,11 @@ to caminar [grupo]
     ifelse [pcolor] of patch-ahead 1 = blue or [pcolor] of patch-ahead 1 = red or [pcolor] of patch-here = blue
     [ lt random-float 360 ]   ;; We see a blue patch in front of us. Turn a random amount.
     [ fd 1 ]                  ;; Otherwise, it is safe to move forward.
+
+    if member? patch-here baño
+    [
+      fd 1
+    ]
 
     ;; Buscar mesa
     buscar-mesa
@@ -175,8 +229,8 @@ end
 GRAPHICS-WINDOW
 322
 10
-829
-518
+830
+519
 -1
 -1
 13.52
@@ -289,6 +343,17 @@ NIL
 NIL
 NIL
 1
+
+MONITOR
+10
+168
+143
+213
+Asistencia al baño
+asistencia-baño
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
