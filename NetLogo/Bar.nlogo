@@ -1,20 +1,6 @@
 globals
 [
-  ;mesa1
-  ;mesa2
-  ;mesa3
-  ;mesa4
-  ;mesa5
-  ;mesa6
-  ;mesa7
-  ;mesas
-  ;no-mesas
-  ;baño
   caja
-  coordenadas-mesas
-  ;asistencia-baño
-  ;limpieza-baño
-  ;banno-lleno     ;; parcela donde ponemos la etiqueta de baño lleno
 ]
 
 breed[consumidores consumidor]
@@ -63,8 +49,6 @@ to setup
   set-default-shape empleados "person"
 
   ;; crear las mesas
-  set coordenadas-mesas [[-10 2] [6 11] [-1 2] [9 2] [2 -7]]
-
   create-mesas 1
   [
     setxy -10 2
@@ -105,45 +89,21 @@ to setup
   ask caja [set pcolor red]
 
   ;; crear el baño
-  ;set baño patches with [(pxcor >= 8 and pxcor <= 14) and (pycor >= 8 and pycor <= 14)]
   create-bannos 1
   [
     setxy 12 11
   ]
 
-  ;; use one of the patch labels to visually indicate whether or not the
-  ;; bar is "crowded"
-  ;set banno-lleno patches with [pxcor >= 10 and pxcor <= 12 and pycor >= 10 and pycor <= 12]
-  ;ask banno-lleno [set plabel-color red]
-  ;ask patch (0.70 * max-pxcor) (0.70 * max-pycor) [
-  ;  set banno-lleno self
-  ;  set plabel-color red
-  ;]
-
-  ;let x 0
-  ;while [x < 5]
-  ;[
-  ;  let y 0
-  ;  while [y < 2]
-  ;  [
-  ;    create-mesas 1
-  ;    [
-  ;      let coordenada matrix:get coordenadas-mesas x y
-  ;      ifelse y > 0
-  ;      [set ycor coordenada]
-  ;      [set xcor coordenada]
-  ;    ]
-  ;    set y y + 1
-  ;  ]
-  ;  set x x + 1
-  ;]
   ask mesas
   [
     set color blue set heading 0 set size 1
     set capacidad 6
     set limpieza 6
     set hidden? true
-    ask patches in-radius 3 [ set pcolor blue ]
+    let cercanos [list pxcor pycor] of patches with [abs pxcor <= 3 and abs pycor <= 3]
+    ask patches at-points cercanos [
+        set pcolor blue
+      ]
   ]
 
   ask bannos
@@ -152,18 +112,11 @@ to setup
     set capacidad 6
     set limpieza 6
     set hidden? true
-    ask patches in-radius 3 [ set pcolor green ]
+    let cercanos [list pxcor pycor] of patches with [abs pxcor <= 3 and abs pycor <= 3]
+    ask patches at-points cercanos [
+        set pcolor green
+      ]
   ]
-
-  ;; agrupar las mesas
-  ;set mesas (patch-set mesa1 mesa2 mesa3 mesa4 mesa5 mesa6 mesa7)
-  ;set no-mesas patches with [(not member? self mesas) and (not member? self caja) and not (count neighbors != 8) and (not member? self baño)]
-
-  ;ask mesas
-  ;[
-  ;  set pcolor blue
-  ;  set libre 1
-  ;]
 
   ;;  This will make the outermost patches blue.  This is to prevent the turtles
   ;;  from wrapping around the world.  Notice it uses the number of neighbor patches rather than
@@ -171,17 +124,12 @@ to setup
   ;; by changing the shape of the world (and it is less mistake-prone)
   ask patches with [count neighbors != 8] [ (set pcolor blue) (set libre 0) ]
 
-  ;ask patches with [pycor = 8 and pxcor >= 8 and pxcor <= 14] [set pcolor blue]
-  ;ask patches with [pycor = 14 and pxcor >= 8 and pxcor <= 14] [set pcolor blue]
-  ;ask patches with [pxcor = 8 and pycor >= 8 and pycor <= 14] [set pcolor blue]
-  ;ask patches with [pxcor = 14 and pycor >= 8 and pycor <= 14] [set pcolor blue]
-
   ;; crear los empleados
   create-empleados cantidad-de-empleados
   [
     set color yellow
     set espera-limpiar-baño 0
-    mover-a-un-espacio-vacio-de patches with [ libre = 1 ]
+    mover-a-un-espacio-vacio-de patches with [ libre = 1 and pcolor != blue ]
   ]
 
   ;; crear los consumidores
@@ -192,16 +140,13 @@ to setup
     set satisfaccion 80
     set estado "Buscando mesa"
     set cuota-cervezas random 10
-    mover-a-un-espacio-vacio-de patches with [ libre = 1 ]
+    mover-a-un-espacio-vacio-de patches with [ libre = 1 and pcolor != blue ]
   ]
-
-  ;ask consumidores [set label cuota-cervezas]
 
   reset-ticks
 end
 
 to go
-  ;ask banno-lleno [ set plabel "" ]
   caminar consumidores
   ask consumidores [ ir-al-baño ]
   actualizar-satisfaccion
@@ -278,11 +223,6 @@ to caminar [grupo]
     ifelse [pcolor] of patch-ahead 1 = blue or [pcolor] of patch-ahead 1 = red or [pcolor] of patch-here = blue
     [ lt random-float 360 ]   ;; We see a blue patch in front of us. Turn a random amount.
     [ fd 1 ]                  ;; Otherwise, it is safe to move forward.
-
-    ;if member? patch-here baño
-    ;[
-    ;  fd 1
-    ;]
 
     ;; Buscar mesa
     ;buscar-mesa
