@@ -1,23 +1,26 @@
 globals
 [
-  mesa1
-  mesa2
-  mesa3
-  mesa4
-  mesa5
-  mesa6
-  mesa7
-  mesas
-  no-mesas
-  baño
+  ;mesa1
+  ;mesa2
+  ;mesa3
+  ;mesa4
+  ;mesa5
+  ;mesa6
+  ;mesa7
+  ;mesas
+  ;no-mesas
+  ;baño
   caja
-  asistencia-baño
-  limpieza-baño
-  crowded-patch     ;; patch where we show the "CROWDED" label
+  coordenadas-mesas
+  ;asistencia-baño
+  ;limpieza-baño
+  ;banno-lleno     ;; parcela donde ponemos la etiqueta de baño lleno
 ]
 
 breed[consumidores consumidor]
 breed[empleados empleado]
+breed[mesas mesa]
+breed[bannos banno]
 
 consumidores-own
 [
@@ -32,6 +35,18 @@ empleados-own
   espera-limpiar-baño
 ]
 
+mesas-own
+[
+  capacidad                    ;;La cantidad de consumidores que le caben
+  limpieza                     ;;El grado de limpieza de la mesa
+]
+
+bannos-own
+[
+  capacidad                    ;;La cantidad de consumidores que le caben
+  limpieza                     ;;El grado de limpieza del baño
+]
+
 patches-own
 [
   libre              ;; 1 si está vacio, 0 si no
@@ -44,63 +59,134 @@ to setup
     set pcolor brown + 3
     set libre 1
   ]
-  set-default-shape turtles "person"
+  set-default-shape consumidores "person"
+  set-default-shape empleados "person"
 
   ;; crear las mesas
-  set mesa1 patches with [(pxcor >= -13 and pxcor <= -8) and (pycor >= 0 and pycor <= 4)]
-  set mesa2 patches with [pxcor >= -13 and pxcor <= -8 and pycor >= 9 and pycor <= 13]
-  set mesa3 patches with [pxcor >= -4 and pxcor <= 1 and pycor >= 9 and pycor <= 13]
-  set mesa4 patches with [pxcor >= -3 and pxcor <= 2 and pycor >= 0 and pycor <= 4]
-  set mesa5 patches with [pxcor >= 8 and pxcor <= 12 and pycor >= 0 and pycor <= 4]
-  set mesa6 patches with [pxcor >= -13 and pxcor <= -6 and pycor >= -9 and pycor <= -4]
-  set mesa7 patches with [pxcor >= -1 and pxcor <= 6 and pycor >= -9 and pycor <= -4]
+  set coordenadas-mesas [[-10 2] [-10 11] [-1 11] [-1 2] [9 2] [-10 -7] [2 -7]]
+
+  ;set mesa1 patches with [(pxcor >= -13 and pxcor <= -8) and (pycor >= 0 and pycor <= 4)]
+  ;create-mesas 1
+  ;[
+  ;  setxy -10 2
+  ;]
+
+  ;set mesa2 patches with [pxcor >= -13 and pxcor <= -8 and pycor >= 9 and pycor <= 13]
+  ;create-mesas 1
+  ;[
+  ;  setxy -10 11
+  ;]
+
+  ;set mesa3 patches with [pxcor >= -4 and pxcor <= 1 and pycor >= 9 and pycor <= 13]
+  ;create-mesas 1
+  ;[
+  ;  setxy -1 11
+  ;]
+
+  ;set mesa4 patches with [pxcor >= -3 and pxcor <= 2 and pycor >= 0 and pycor <= 4]
+  ;create-mesas 1
+  ;[
+  ;  setxy -1 2
+  ;]
+
+  ;set mesa5 patches with [pxcor >= 8 and pxcor <= 12 and pycor >= 0 and pycor <= 4]
+  ;create-mesas 1
+  ;[
+  ;  setxy 9 2
+  ;]
+
+  ;set mesa6 patches with [pxcor >= -13 and pxcor <= -6 and pycor >= -9 and pycor <= -4]
+  ;create-mesas 1
+  ;[
+  ;  setxy -10 -7
+  ;]
+
+  ;set mesa7 patches with [pxcor >= -1 and pxcor <= 6 and pycor >= -9 and pycor <= -4]
+  ;create-mesas 1
+  ;[
+  ;  setxy 3 -7
+  ;]
 
   ;; crear la caja
   set caja patches with [pxcor >= 11 and pxcor <= 14 and pycor >= -13 and pycor <= -5]
   ask caja [set pcolor red]
 
-  ;; crear el baños
-  set baño patches with [(pxcor >= 8 and pxcor <= 14) and (pycor >= 8 and pycor <= 14)]
-  ask baño [ set pcolor green ]
-  set asistencia-baño 0
-  set limpieza-baño 10
+  ;; crear el baño
+  ;set baño patches with [(pxcor >= 8 and pxcor <= 14) and (pycor >= 8 and pycor <= 14)]
+  create-bannos 1
+  [
+    setxy 12 11
+  ]
 
   ;; use one of the patch labels to visually indicate whether or not the
   ;; bar is "crowded"
-  ;set crowded-patch patches with [pxcor >= 10 and pxcor <= 12 and pycor >= 10 and pycor <= 12]
-  ;ask crowded-patch [set plabel-color red]
-  ask patch (0.70 * max-pxcor) (0.70 * max-pycor) [
-    set crowded-patch self
-    set plabel-color red
+  ;set banno-lleno patches with [pxcor >= 10 and pxcor <= 12 and pycor >= 10 and pycor <= 12]
+  ;ask banno-lleno [set plabel-color red]
+  ;ask patch (0.70 * max-pxcor) (0.70 * max-pycor) [
+  ;  set banno-lleno self
+  ;  set plabel-color red
+  ;]
+
+  foreach coordenadas-mesas
+  [
+    x ->
+    let eje-x-ya false
+    foreach x
+    [
+      y ->
+      create-mesas 1
+      [
+        ifelse eje-x-ya
+        [set ycor y]
+        [(set xcor y) (set eje-x-ya true)]
+      ]
+    ]
+  ]
+  ask mesas
+  [
+    set color blue set heading 0 set size 1
+    set capacidad 6
+    set limpieza 6
+    set hidden? true
+    ask patches in-radius 3 [ set pcolor blue ]
+  ]
+
+  ask bannos
+  [
+    set color green set heading 0 set size 2
+    set capacidad 6
+    set limpieza 6
+    set hidden? true
+    ask patches in-radius 3 [ set pcolor green ]
   ]
 
   ;; agrupar las mesas
-  set mesas (patch-set mesa1 mesa2 mesa3 mesa4 mesa5 mesa6 mesa7)
-  set no-mesas patches with [(not member? self mesas) and (not member? self caja) and not (count neighbors != 8) and (not member? self baño)]
+  ;set mesas (patch-set mesa1 mesa2 mesa3 mesa4 mesa5 mesa6 mesa7)
+  ;set no-mesas patches with [(not member? self mesas) and (not member? self caja) and not (count neighbors != 8) and (not member? self baño)]
 
-  ask mesas
-  [
-    set pcolor blue
-    set libre 1
-  ]
+  ;ask mesas
+  ;[
+  ;  set pcolor blue
+  ;  set libre 1
+  ;]
 
   ;;  This will make the outermost patches blue.  This is to prevent the turtles
   ;;  from wrapping around the world.  Notice it uses the number of neighbor patches rather than
   ;;  a location. This is better because it will allow you to change the behavior of the turtles
   ;; by changing the shape of the world (and it is less mistake-prone)
-  ask patches with [count neighbors != 8] [ set pcolor blue ]
+  ask patches with [count neighbors != 8] [ (set pcolor blue) (set libre 0) ]
 
-  ask patches with [pycor = 8 and pxcor >= 8 and pxcor <= 14] [set pcolor blue]
-  ask patches with [pycor = 14 and pxcor >= 8 and pxcor <= 14] [set pcolor blue]
-  ask patches with [pxcor = 8 and pycor >= 8 and pycor <= 14] [set pcolor blue]
-  ask patches with [pxcor = 14 and pycor >= 8 and pycor <= 14] [set pcolor blue]
+  ;ask patches with [pycor = 8 and pxcor >= 8 and pxcor <= 14] [set pcolor blue]
+  ;ask patches with [pycor = 14 and pxcor >= 8 and pxcor <= 14] [set pcolor blue]
+  ;ask patches with [pxcor = 8 and pycor >= 8 and pycor <= 14] [set pcolor blue]
+  ;ask patches with [pxcor = 14 and pycor >= 8 and pycor <= 14] [set pcolor blue]
 
   ;; crear los empleados
   create-empleados cantidad-de-empleados
   [
     set color yellow
     set espera-limpiar-baño 0
-    mover-a-un-espacio-vacio-de no-mesas
+    mover-a-un-espacio-vacio-de patches with [ libre = 1 ]
   ]
 
   ;; crear los consumidores
@@ -111,18 +197,18 @@ to setup
     set satisfaccion 80
     set estado "Buscando mesa"
     set cuota-cervezas random 10
-    mover-a-un-espacio-vacio-de no-mesas
+    mover-a-un-espacio-vacio-de patches with [ libre = 1 ]
   ]
 
-  ask consumidores [set label cuota-cervezas]
+  ;ask consumidores [set label cuota-cervezas]
 
   reset-ticks
 end
 
 to go
-  ask crowded-patch [ set plabel "" ]
+  ;ask banno-lleno [ set plabel "" ]
   caminar consumidores
-  ir-al-baño
+  ask consumidores [ ir-al-baño ]
   actualizar-satisfaccion
   eliminar-insatisfechos
   tick
@@ -131,29 +217,24 @@ end
 ;; Dirige al agente hacia el baño de manera natural, un paso a la vez
 ;; En implementación
 ;; Basado en el ejemplo de codigo de la Biblioteca de Modelos llamado "Move Towards Target"
-to mover-al-baño
-  let blanco one-of baño
-  face blanco
-  ifelse distance blanco < 1
-      [ move-to blanco ]
-      [ fd 1 ]
-end
+;to mover-al-baño
+;  let blanco one-of baño
+;  face blanco
+;  ifelse distance blanco < 1
+;      [ move-to blanco ]
+;      [ fd 1 ]
+;end
 
 to ir-al-baño
-  let por-ir-al-baño consumidores with [cuota-cervezas > 4]
-  if any? por-ir-al-baño
+  if cuota-cervezas > 4
   [
-    ask por-ir-al-baño [if asistencia-baño < 6 [(move-to one-of baño) (set asistencia-baño asistencia-baño + 1) (set limpieza-baño limpieza-baño - 1)]]
-  ]
-  let consumidores-en-baño consumidores with [member? patch-here baño]
-  ;; if the bar is crowded indicate that in the view
-  ;set asistencia-baño count turtles-on baño
-  if asistencia-baño > 5 [
-    ask crowded-patch [ set plabel "Lleno" ]
-  ]
-  if any? consumidores-en-baño
-  [
-    ask consumidores-en-baño [(mover-a-un-espacio-vacio-de mesas) (set cuota-cervezas 0) (set asistencia-baño asistencia-baño - 1)]
+    let bannos-con-campo bannos with [capacidad > 0]
+    if any? bannos-con-campo
+    [
+      let banno-escogido one-of bannos-con-campo
+      move-to banno-escogido
+      ask banno-escogido [ (set capacidad capacidad - 1) (set limpieza limpieza - 1) ]
+    ]
   ]
 end
 
@@ -203,28 +284,28 @@ to caminar [grupo]
     [ lt random-float 360 ]   ;; We see a blue patch in front of us. Turn a random amount.
     [ fd 1 ]                  ;; Otherwise, it is safe to move forward.
 
-    if member? patch-here baño
-    [
-      fd 1
-    ]
+    ;if member? patch-here baño
+    ;[
+    ;  fd 1
+    ;]
 
     ;; Buscar mesa
-    buscar-mesa
+    ;buscar-mesa
   ]
   ;if ticks mod 10 = 0 and ticks > 0
   ;[set satisfaccion satisfaccion - 1]
 end
 
-to buscar-mesa
-  let vecinos-vacios neighbors with [member? self mesas with [libre = 1]]
-  if any? vecinos-vacios
-  [
-    let espacio-escogido one-of vecinos-vacios
-    ask espacio-escogido [set libre 0]
-    move-to espacio-escogido
-    ask self [set estado "Esperando ser atendido"]
-  ]
-end
+;to buscar-mesa
+;  let vecinos-vacios neighbors with [member? self mesas with [libre = 1]]
+;  if any? vecinos-vacios
+;  [
+;    let espacio-escogido one-of vecinos-vacios
+;    ask espacio-escogido [set libre 0]
+;    move-to espacio-escogido
+;    ask self [set estado "Esperando ser atendido"]
+;  ]
+;end
 @#$#@#$#@
 GRAPHICS-WINDOW
 322
@@ -296,7 +377,7 @@ cantidad-de-empleados
 cantidad-de-empleados
 0
 10
-5.0
+3.0
 1
 1
 NIL
@@ -311,7 +392,7 @@ cantidad-de-consumidores
 cantidad-de-consumidores
 0
 100
-30.0
+15.0
 1
 1
 NIL
@@ -344,16 +425,35 @@ NIL
 NIL
 1
 
-MONITOR
+SLIDER
+9
+159
+195
+192
+cantidad-de-mesas
+cantidad-de-mesas
+0
 10
-168
-143
-213
-Asistencia al baño
-asistencia-baño
-17
+6.0
 1
-11
+1
+NIL
+HORIZONTAL
+
+SLIDER
+9
+201
+193
+234
+cantidad-de-bannos
+cantidad-de-bannos
+0
+4
+1.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
