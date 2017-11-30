@@ -63,49 +63,42 @@ to setup
   set-default-shape empleados "person"
 
   ;; crear las mesas
-  set coordenadas-mesas [[-10 2] [-10 11] [-1 11] [-1 2] [9 2] [-10 -7] [2 -7]]
+  set coordenadas-mesas [[-10 2] [6 11] [-1 2] [9 2] [2 -7]]
 
-  ;set mesa1 patches with [(pxcor >= -13 and pxcor <= -8) and (pycor >= 0 and pycor <= 4)]
-  ;create-mesas 1
-  ;[
-  ;  setxy -10 2
-  ;]
+  create-mesas 1
+  [
+    setxy -10 2
+  ]
 
-  ;set mesa2 patches with [pxcor >= -13 and pxcor <= -8 and pycor >= 9 and pycor <= 13]
-  ;create-mesas 1
-  ;[
-  ;  setxy -10 11
-  ;]
+  create-mesas 1
+  [
+    setxy -10 11
+  ]
 
-  ;set mesa3 patches with [pxcor >= -4 and pxcor <= 1 and pycor >= 9 and pycor <= 13]
-  ;create-mesas 1
-  ;[
-  ;  setxy -1 11
-  ;]
+  create-mesas 1
+  [
+    setxy -1 11
+  ]
 
-  ;set mesa4 patches with [pxcor >= -3 and pxcor <= 2 and pycor >= 0 and pycor <= 4]
-  ;create-mesas 1
-  ;[
-  ;  setxy -1 2
-  ;]
+  create-mesas 1
+  [
+    setxy -1 2
+  ]
 
-  ;set mesa5 patches with [pxcor >= 8 and pxcor <= 12 and pycor >= 0 and pycor <= 4]
-  ;create-mesas 1
-  ;[
-  ;  setxy 9 2
-  ;]
+  create-mesas 1
+  [
+    setxy 9 2
+  ]
 
-  ;set mesa6 patches with [pxcor >= -13 and pxcor <= -6 and pycor >= -9 and pycor <= -4]
-  ;create-mesas 1
-  ;[
-  ;  setxy -10 -7
-  ;]
+  create-mesas 1
+  [
+    setxy -10 -7
+  ]
 
-  ;set mesa7 patches with [pxcor >= -1 and pxcor <= 6 and pycor >= -9 and pycor <= -4]
-  ;create-mesas 1
-  ;[
-  ;  setxy 3 -7
-  ;]
+  create-mesas 1
+  [
+    setxy 3 -7
+  ]
 
   ;; crear la caja
   set caja patches with [pxcor >= 11 and pxcor <= 14 and pycor >= -13 and pycor <= -5]
@@ -127,21 +120,23 @@ to setup
   ;  set plabel-color red
   ;]
 
-  foreach coordenadas-mesas
-  [
-    x ->
-    let eje-x-ya false
-    foreach x
-    [
-      y ->
-      create-mesas 1
-      [
-        ifelse eje-x-ya
-        [set ycor y]
-        [(set xcor y) (set eje-x-ya true)]
-      ]
-    ]
-  ]
+  ;let x 0
+  ;while [x < 5]
+  ;[
+  ;  let y 0
+  ;  while [y < 2]
+  ;  [
+  ;    create-mesas 1
+  ;    [
+  ;      let coordenada matrix:get coordenadas-mesas x y
+  ;      ifelse y > 0
+  ;      [set ycor coordenada]
+  ;      [set xcor coordenada]
+  ;    ]
+  ;    set y y + 1
+  ;  ]
+  ;  set x x + 1
+  ;]
   ask mesas
   [
     set color blue set heading 0 set size 1
@@ -308,9 +303,9 @@ end
 ;end
 @#$#@#$#@
 GRAPHICS-WINDOW
-322
+298
 10
-830
+806
 519
 -1
 -1
