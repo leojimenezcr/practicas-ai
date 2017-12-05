@@ -101,12 +101,14 @@ to setup
     set color blue set heading 0 set size 1
     set capacidad 6      ;;Cada mesa tiene capacidad para 6 consumidores
     set limpieza 6       ;;Cada mesa tiene un rango de limpieza medido entre 0 y 6
-    set hidden? true     ;;Se esconden las tortugas "mesa" para evitar el solapamiento entre mesas y consumidores
+    ;set hidden? true     ;;Se esconden las tortugas "mesa" para evitar el solapamiento entre mesas y consumidores
     ;;Se crean las mesas como vecindarios de Moore con radio 3
     let cercanos [list pxcor pycor] of patches with [abs pxcor <= 3 and abs pycor <= 3]
     ask patches at-points cercanos [
         set pcolor blue
       ]
+    set label capacidad
+    set label-color red
   ]
 
   ask bannos
@@ -144,9 +146,10 @@ to setup
     set satisfaccion 80            ;;Los consumidores cuentan con una satisfacción medida en el rango de enteros [0,100]
     set estado "Buscando mesa"     ;;Los consumidores comienzan buscando una mesa
     set cuota-cervezas random 10   ;;Se les inicializa con un número aleatorio de cervezas, para efectos de ir al baño
-    ;set label satisfaccion
-    ;set label-color red
-    set mi-mesa one-of mesas       ;;Al consumidor se le asigna una mesa
+    set label cuota-cervezas
+    set label-color red
+    set mi-mesa one-of mesas      ;;Al consumidor se le asigna una mesa
+
     mover-a-un-espacio-vacio-de patches with [ pcolor = brown + 3 ]
   ]
 
@@ -157,9 +160,10 @@ to go
   ;socializar con otros consumidores en el mismo espacio
   ask consumidores [ if any? other consumidores-here [ hablar ] ]
   caminar
-  ir-al-baño
+  ;ir-al-baño
   actualizar-satisfaccion
-  eliminar-insatisfechos
+  ;eliminar-insatisfechos
+  ask consumidores [ set label cuota-cervezas ]
   tick
 end
 
@@ -191,11 +195,7 @@ to hablar
 end
 
 to ir-al-baño
-  ask consumidores
-  [
     ;;Si ya ha tomado más de 4 cervezas necesita ir al baño, esto es un supuesto
-    ifelse cuota-cervezas > 4
-    [
       let bannos-con-campo bannos with [capacidad > 0]   ;;Determina cuales baños tienen campo
       if any? bannos-con-campo
       [
@@ -209,17 +209,16 @@ to ir-al-baño
         ;;Registra la actual capacidad del baño
         ask banno-escogido [ (set capacidad capacidad - 1) (set limpieza limpieza - 1) ]
       ]
-    ]
-    [
-      ;;Al terminar de posicionarse en el baño el consumidor vuelve a buscar mesa
-      if estado = "En bano"
-      [
-        let banno-escogido one-of bannos
-        ask banno-escogido [ set capacidad capacidad + 1 ]
-        set estado "Buscando mesa"
-      ]
-    ]
-  ]
+
+;    [
+;      ;;Al terminar de posicionarse en el baño el consumidor vuelve a buscar mesa
+;      if estado = "En bano"
+;      [
+;        let banno-escogido one-of bannos
+;        ask banno-escogido [ set capacidad capacidad + 1 ]
+;        set estado "Buscando mesa"
+;      ]
+;    ]
 end
 
 to actualizar-satisfaccion
@@ -268,34 +267,61 @@ to caminar
       ;;  cannot move onto.  Notice that we don't use any information on the turtle's
       ;;  heading or position.  Remember, patch-ahead 1 is the patch the turtle would be on
       ;;  if it moved forward 1 in its current heading.
-      ifelse patch-ahead 1 != nobody and [pcolor] of patch-ahead 1 = blue
-      [ lt random-float 360 ]   ;; We see a blue patch in front of us. Turn a random amount.
-      [ fd 1 ]                  ;; Otherwise, it is safe to move forward.
+      ;ifelse patch-ahead 1 != nobody and [pcolor] of patch-ahead 1 = blue
+      ;[ lt random-float 360 ]   ;; We see a blue patch in front of us. Turn a random amount.
+      ;[ fd 1 ]                  ;; Otherwise, it is safe to move forward.
 
+      ;print "caminar"
+      ;print mi-mesa
+      ifelse [capacidad] of mi-mesa > 0
+      [buscar-mesa]
+      [set mi-mesa one-of mesas]      ;;Al consumidor se le asigna una mesa
+      ;print mi-mesa
       ;;Cada vez que se desplaza el consumidor revisa su alrededor en busca de una mesa
-      buscar-mesa
+
     ]
   ]
   ;if ticks mod 10 = 0 and ticks > 0
   ;[set satisfaccion satisfaccion - 1]
 end
 
-to buscar-mesa ;[espacio]
+to buscar-mesa ;[numero-mesa]
   ask consumidores [
     ;; move towards target.  once the distance is less than 1,
     ;; use move-to to land exactly on the target.
-    ifelse distance mi-mesa < 3
-    [
+    ;print "buscar-mesa"
+    ;print mi-mesa
+    ;ifelse distance mi-mesa < 3
+    ;[
       let espacio-mi-mesa nobody
       ask mi-mesa [ set espacio-mi-mesa neighbors ]   ;;Simula el espacio de la mesa
       move-to one-of espacio-mi-mesa
-      set estado "Esperando ser atendido"
-    ]
-    [
-      ifelse patch-ahead 1 != nobody and [pcolor] of patch-ahead 1 != blue
-      [ face mi-mesa ]
-      [ lt random-float 360 fd 1 ]
-    ]
+      ask mi-mesa [set capacidad capacidad - 1 set label capacidad]
+      ifelse cuota-cervezas > 4
+      [
+        set estado "Por ir al baño"
+        set cuota-cervezas 0
+      ]
+      [
+        if "Por ir al baño" = estado
+        [
+          let banno-escogido one-of bannos
+          let espacios 0
+          ask banno-escogido [ set espacios neighbors ]
+          move-to one-of espacios
+          ask banno-escogido [ set capacidad capacidad + 1 ]
+          set estado "Buscando mesa"
+        ]
+      ]
+
+      ;print word "entrando en cercania" self
+      ;set estado "Esperando ser atendido"
+    ;]
+;    [
+;      ifelse patch-ahead 1 != nobody and [pcolor] of patch-ahead 1 != blue
+;      [ face mi-mesa ]
+;      [ lt random-float 360 fd 1 ]
+;    ]
   ]
 end
 @#$#@#$#@
@@ -384,7 +410,7 @@ cantidad-de-consumidores
 cantidad-de-consumidores
 0
 100
-15.0
+4.0
 1
 1
 NIL
