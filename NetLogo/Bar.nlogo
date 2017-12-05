@@ -1,6 +1,6 @@
 globals
 [
-  caja
+  caja             ;;Punto de cobro
 ]
 
 breed[consumidores consumidor]
@@ -12,13 +12,14 @@ consumidores-own
 [
   estado                       ;;"Buscando mesa", "Socializando", "Llendo al baño", "Esperando ser atendido"
   satisfaccion
-  tolerancia
-  cuota-cervezas
+  tolerancia                   ;;Dependiendo de que tan tolerante es el consumidor, tiene mayor o menor impacto los eventos negativos en su atencion
+  cuota-cervezas               ;;Indica cuando un consumidor debe ir al banno
+  mi-mesa                      ;;Mesa en la que el consumidor esta ubicado
 ]
 
 empleados-own
 [
-  espera-limpiar-baño
+  espera-limpiar-baño          ;;Indica cada cuantos ticks limpia el baño el empleado
 ]
 
 mesas-own
@@ -49,6 +50,7 @@ to setup
   set-default-shape empleados "person"
 
   ;; crear las mesas
+  ;; Creacion estatica de las mesas
   create-mesas 1
   [
     setxy -10 2
@@ -97,9 +99,10 @@ to setup
   ask mesas
   [
     set color blue set heading 0 set size 1
-    set capacidad 6
-    set limpieza 6
-    set hidden? true
+    set capacidad 6      ;;Cada mesa tiene capacidad para 6 consumidores
+    set limpieza 6       ;;Cada mesa tiene un rango de limpieza medido entre 0 y 6
+    set hidden? true     ;;Se esconden las tortugas "mesa" para evitar el solapamiento entre mesas y consumidores
+    ;;Se crean las mesas como vecindarios de Moore con radio 3
     let cercanos [list pxcor pycor] of patches with [abs pxcor <= 3 and abs pycor <= 3]
     ask patches at-points cercanos [
         set pcolor blue
@@ -109,9 +112,10 @@ to setup
   ask bannos
   [
     set color green set heading 0 set size 2
-    set capacidad 6
-    set limpieza 6
-    set hidden? true
+    set capacidad 6      ;;Cada baño tiene capacidad para 6 consumidores
+    set limpieza 6       ;;Cada baño tiene un rango de limpieza medido entre 0 y 6
+    set hidden? true     ;;Se esconden las tortugas "banno" para evitar el solapamiento entre baños y consumidores
+    ;;Se crean los baños como vecindarios de Moore con radio 3
     let cercanos [list pxcor pycor] of patches with [abs pxcor <= 3 and abs pycor <= 3]
     ask patches at-points cercanos [
         set pcolor green
@@ -122,75 +126,115 @@ to setup
   ;;  from wrapping around the world.  Notice it uses the number of neighbor patches rather than
   ;;  a location. This is better because it will allow you to change the behavior of the turtles
   ;; by changing the shape of the world (and it is less mistake-prone)
-  ask patches with [count neighbors != 8] [ (set pcolor blue) (set libre 0) ]
+  ask patches with [count neighbors != 8] [ set pcolor blue ]
 
   ;; crear los empleados
   create-empleados cantidad-de-empleados
   [
     set color yellow
     set espera-limpiar-baño 0
-    mover-a-un-espacio-vacio-de patches with [ libre = 1 and pcolor != blue ]
+    mover-a-un-espacio-vacio-de patches with [ pcolor = brown + 3 ]
   ]
 
   ;; crear los consumidores
   create-consumidores cantidad-de-consumidores
   [
     set color black
-    set tolerancia 80
-    set satisfaccion 80
-    set estado "Buscando mesa"
-    set cuota-cervezas random 10
-    mover-a-un-espacio-vacio-de patches with [ libre = 1 and pcolor != blue ]
+    set tolerancia 80              ;;Los consumidores cuentan con una tolerancia medida en el rango de enteros [0,100]
+    set satisfaccion 80            ;;Los consumidores cuentan con una satisfacción medida en el rango de enteros [0,100]
+    set estado "Buscando mesa"     ;;Los consumidores comienzan buscando una mesa
+    set cuota-cervezas random 10   ;;Se les inicializa con un número aleatorio de cervezas, para efectos de ir al baño
+    set label satisfaccion
+    set label-color red
+    set mi-mesa one-of mesas       ;;Al consumidor se le asigna una mesa
+    mover-a-un-espacio-vacio-de patches with [ pcolor = brown + 3 ]
   ]
 
   reset-ticks
 end
 
 to go
-  caminar consumidores
-  ask consumidores [ ir-al-baño ]
-  actualizar-satisfaccion
-  eliminar-insatisfechos
+  ;socializar con otros consumidores en el mismo espacio
+  ask consumidores [ if any? other consumidores-here [ hablar ] ]
+  caminar
+  ir-al-baño
+  ;actualizar-satisfaccion
+  ;eliminar-insatisfechos
   tick
 end
 
 ;; Dirige al agente hacia el baño de manera natural, un paso a la vez
 ;; En implementación
 ;; Basado en el ejemplo de codigo de la Biblioteca de Modelos llamado "Move Towards Target"
-;to mover-al-baño
-;  let blanco one-of baño
-;  face blanco
-;  ifelse distance blanco < 1
-;      [ move-to blanco ]
-;      [ fd 1 ]
-;end
+to mover-al-baño [banno-seleccionado]
+  ;;Se encamina al baño escogido
+  face banno-seleccionado
+  ;;Si esta cerca del baño
+  ifelse distance banno-seleccionado < 3
+  [
+    ;;Se posiciona en el baño
+    let espacio-mi-banno nobody
+    ask banno-seleccionado [ set espacio-mi-banno neighbors ]
+    move-to one-of espacio-mi-banno
+    set cuota-cervezas 0     ;;Se reanuda la cuenta de las cervezas para volver a ir al baño
+    set estado "En bano"     ;;Cambia el estado para determinar la proxima acción a tomar
+  ]
+  ;;Si no esta cerca del baño sigue caminando
+  [ fd 1 ]
+end
+
+to hablar
+  let pareja 0
+  set pareja one-of other consumidores-here    ;;Busca otro consumidor que este en su misma posición
+  set satisfaccion satisfaccion + 4            ;;Aumenta la satisfacción como resultado de la socialización
+  ask pareja [ set satisfaccion satisfaccion + 4 ]  ;;Igualmente mejora la satisfacción para el otro consumidor
+end
 
 to ir-al-baño
-  if cuota-cervezas > 4
+  ask consumidores
   [
-    let bannos-con-campo bannos with [capacidad > 0]
-    if any? bannos-con-campo
+    ;;Si ya ha tomado más de 4 cervezas necesita ir al baño, esto es un supuesto
+    ifelse cuota-cervezas > 4
     [
-      let banno-escogido one-of bannos-con-campo
-      move-to banno-escogido
-      ask banno-escogido [ (set capacidad capacidad - 1) (set limpieza limpieza - 1) ]
+      let bannos-con-campo bannos with [capacidad > 0]   ;;Determina cuales baños tienen campo
+      if any? bannos-con-campo
+      [
+        let banno-escogido one-of bannos-con-campo
+        set estado "Llendo al bano"
+        ;;Se mantiene en el baño hasta que termina de posicionarse
+        while [estado = "Llendo al bano"]
+        [
+          mover-al-baño banno-escogido  ;;Se posiciona en el baño
+        ]
+        ;;Registra la actual capacidad del baño
+        ask banno-escogido [ (set capacidad capacidad - 1) (set limpieza limpieza - 1) ]
+      ]
+    ]
+    [
+      ;;Al terminar de posicionarse en el baño el consumidor vuelve a buscar mesa
+      if estado = "En bano"
+      [
+        let banno-escogido one-of bannos
+        ask banno-escogido [ set capacidad capacidad + 1 ]
+        set estado "Buscando mesa"
+      ]
     ]
   ]
 end
 
 to actualizar-satisfaccion
-  let consumidores-buscando-mesa consumidores with [estado = "Buscando mesa"]
+  let consumidores-buscando-mesa consumidores with [estado = "Buscando mesa"]  ;;Determina cuales consumidores se encuentran buscando mesa
   if any? consumidores-buscando-mesa
   [
-    if ticks mod 10 = 0
+    if ticks mod 10 = 0    ;;Por cada 10 ticks que el usuario pase buscando mesa se decrementa la satisfacción en 4 unidades
     [ask consumidores-buscando-mesa [set satisfaccion satisfaccion - 4]]
   ]
 end
 
 to eliminar-insatisfechos
-  let consumidores-insatisfechos consumidores with [satisfaccion <= 30]
+  let consumidores-insatisfechos consumidores with [satisfaccion <= 30]   ;;Determina cuales consumidores estan muy insatisfechos
   if any? consumidores-insatisfechos
-  [ask consumidores-insatisfechos [die]]
+  [ask consumidores-insatisfechos [die]]  ;;elimina los consumidores insatisfechos para simular el abandono del bar por parte de los consumidores
 end
 
 ;; In this model it doesn't really matter exactly which patch
@@ -210,37 +254,50 @@ to mover-a-un-espacio-vacio-de [espacios]  ;; turtle procedure
   ]
 end
 
-to caminar [grupo]
+to caminar
   ;; Basado del ejemplo de codigo "Look Ahead Example" de la Boblioteca de Modelos de NetLogo
-  ask grupo
+  ask consumidores
   [
-    ;;  This important conditional determines if they are about to walk into a blue
-    ;;  patch.  It lets us make a decision about what to do BEFORE the turtle walks
-    ;;  into a blue patch.  This is a good way to simulate a wall or barrier that turtles
-    ;;  cannot move onto.  Notice that we don't use any information on the turtle's
-    ;;  heading or position.  Remember, patch-ahead 1 is the patch the turtle would be on
-    ;;  if it moved forward 1 in its current heading.
-    ifelse [pcolor] of patch-ahead 1 = blue or [pcolor] of patch-ahead 1 = red or [pcolor] of patch-here = blue
-    [ lt random-float 360 ]   ;; We see a blue patch in front of us. Turn a random amount.
-    [ fd 1 ]                  ;; Otherwise, it is safe to move forward.
-
     ;; Buscar mesa
-    ;buscar-mesa
+    ;;Si el consumidor esta buscando una mesa
+    if estado = "Buscando mesa"
+    [
+      ;;  This important conditional determines if they are about to walk into a blue
+      ;;  patch.  It lets us make a decision about what to do BEFORE the turtle walks
+      ;;  into a blue patch.  This is a good way to simulate a wall or barrier that turtles
+      ;;  cannot move onto.  Notice that we don't use any information on the turtle's
+      ;;  heading or position.  Remember, patch-ahead 1 is the patch the turtle would be on
+      ;;  if it moved forward 1 in its current heading.
+      ifelse patch-ahead 1 != nobody and [pcolor] of patch-ahead 1 = blue
+      [ lt random-float 360 ]   ;; We see a blue patch in front of us. Turn a random amount.
+      [ fd 1 ]                  ;; Otherwise, it is safe to move forward.
+
+      ;;Cada vez que se desplaza el consumidor revisa su alrededor en busca de una mesa
+      buscar-mesa
+    ]
   ]
   ;if ticks mod 10 = 0 and ticks > 0
   ;[set satisfaccion satisfaccion - 1]
 end
 
-;to buscar-mesa
-;  let vecinos-vacios neighbors with [member? self mesas with [libre = 1]]
-;  if any? vecinos-vacios
-;  [
-;    let espacio-escogido one-of vecinos-vacios
-;    ask espacio-escogido [set libre 0]
-;    move-to espacio-escogido
-;    ask self [set estado "Esperando ser atendido"]
-;  ]
-;end
+to buscar-mesa ;[espacio]
+  ask consumidores [
+    ;; move towards target.  once the distance is less than 1,
+    ;; use move-to to land exactly on the target.
+    ifelse distance mi-mesa < 3
+    [
+      let espacio-mi-mesa nobody
+      ask mi-mesa [ set espacio-mi-mesa neighbors ]   ;;Simula el espacio de la mesa
+      move-to one-of espacio-mi-mesa
+      set estado "Esperando ser atendido"
+    ]
+    [
+      ifelse patch-ahead 1 != nobody and [pcolor] of patch-ahead 1 != blue
+      [ face mi-mesa ]
+      [ lt random-float 360 fd 1 ]
+    ]
+  ]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 298
@@ -359,36 +416,6 @@ NIL
 NIL
 NIL
 1
-
-SLIDER
-9
-159
-195
-192
-cantidad-de-mesas
-cantidad-de-mesas
-0
-10
-6.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-9
-201
-193
-234
-cantidad-de-bannos
-cantidad-de-bannos
-0
-4
-1.0
-1
-1
-NIL
-HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
