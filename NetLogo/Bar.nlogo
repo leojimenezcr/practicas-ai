@@ -144,8 +144,8 @@ to setup
     set satisfaccion 80            ;;Los consumidores cuentan con una satisfacción medida en el rango de enteros [0,100]
     set estado "Buscando mesa"     ;;Los consumidores comienzan buscando una mesa
     set cuota-cervezas random 10   ;;Se les inicializa con un número aleatorio de cervezas, para efectos de ir al baño
-    set label satisfaccion
-    set label-color red
+    ;set label satisfaccion
+    ;set label-color red
     set mi-mesa one-of mesas       ;;Al consumidor se le asigna una mesa
     mover-a-un-espacio-vacio-de patches with [ pcolor = brown + 3 ]
   ]
@@ -158,8 +158,8 @@ to go
   ask consumidores [ if any? other consumidores-here [ hablar ] ]
   caminar
   ir-al-baño
-  ;actualizar-satisfaccion
-  ;eliminar-insatisfechos
+  actualizar-satisfaccion
+  eliminar-insatisfechos
   tick
 end
 
@@ -418,17 +418,18 @@ NIL
 1
 
 @#$#@#$#@
-## WHAT IS IT?
+## ¿Que es el modelo?
 
-(a general understanding of what the model is trying to show or explain)
+El modelo "Bar" busca mostrar las implicaciones de la cantidad de mesas dentro de un bar, así como la cantidad de baños y empleados, en la satisfacción de sus clientes, considerando la limpieza de las mesas y los baños como factor importante para influenciar la satisfacción de los clientes del bar, además se consideran los tiempos de atención, el tiempo de espera de los consumidores del bar para recibir su pedido; por otro lado, también considera el impacto de la socialización en la satisfacción de los clientes.
 
-## HOW IT WORKS
+## Como funciona
 
-(what rules the agents use to create the overall behavior of the model)
+Los consumidores comienzan buscando una mesa, para lo cual se desplazan por el entorno respetando las "paredes" del bar y las mesas, cada consumidor debe ir al baño cada vez que ha tomado 4 o más cervezas, y cada vez que va al baño esa cuenta se reinicia, luego de ir al baño los consumidores vuelven a buscar su mesa, cada vez que los consumidores se desplazan por el entorno tienen la oportunidad de socializar con los otros consumidores cerca suyo, aumentando su satisfacción. En cuanto al tiempo que le toma a un consumidor encontrar una mesa, esto disminuye su satisfacción, así como la limpieza de la misma y de los baños, como también la espera para ser atendido por un empleado.
+Los empleados atienden los pedidos de los consumidores, y cuando no tienen pedidos pendientes limpian los baños y las mesas, periodicamente, 
 
-## HOW TO USE IT
+## Como se usa
 
-(how to use the model, including a description of each of the items in the Interface tab)
+En la interfaz gráfica se puede determinar la cantidad de empleados y consumidores deseados en la simulación, lo que permite ver que impacto tiene el incrementar los empleados.
 
 ## THINGS TO NOTICE
 
