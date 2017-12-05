@@ -1,6 +1,12 @@
-globals
-[
+;; "Buscando mesa" "En el baño" "Esperando baño" "Esperando ser atendido"
+
+globals[
   caja             ;;Punto de cobro
+  ordenes          ;;lista de ordenes
+  ubicacion-mesas  ;;lista de la ubicacion de las mesas
+  ubicacion-bannos ;;lista de la ubicacion de los baños
+  ubicacion-caja   ;;ubicacion de la caja
+  cant-mesas       ;;cantidad de mesas
 ]
 
 breed[consumidores consumidor]
@@ -8,8 +14,8 @@ breed[empleados empleado]
 breed[mesas mesa]
 breed[bannos banno]
 
-consumidores-own
-[
+
+consumidores-own[
   estado                       ;;"Buscando mesa", "Socializando", "Llendo al baño", "Esperando ser atendido"
   satisfaccion
   tolerancia                   ;;Dependiendo de que tan tolerante es el consumidor, tiene mayor o menor impacto los eventos negativos en su atencion
@@ -17,32 +23,29 @@ consumidores-own
   mi-mesa                      ;;Mesa en la que el consumidor esta ubicado
 ]
 
-empleados-own
-[
+empleados-own[
   espera-limpiar-baño          ;;Indica cada cuantos ticks limpia el baño el empleado
+  puesto                       ;;Si es 0 es salonero, si es 1 es cajero
+  mesas-asignadas              ;;Las mesas asignadas para servir
 ]
 
-mesas-own
-[
+mesas-own[
   capacidad                    ;;La cantidad de consumidores que le caben
   limpieza                     ;;El grado de limpieza de la mesa
 ]
 
-bannos-own
-[
+bannos-own[
   capacidad                    ;;La cantidad de consumidores que le caben
   limpieza                     ;;El grado de limpieza del baño
 ]
 
-patches-own
-[
-  libre              ;; 1 si está vacio, 0 si no
+patches-own[
+  libre                        ;; 1 si está vacio, 0 si no
 ]
 
 to setup
   clear-all
-  ask patches
-  [
+  ask patches[
     set pcolor brown + 3
     set libre 1
   ]
@@ -50,72 +53,75 @@ to setup
   set-default-shape empleados "person"
 
   ;; crear las mesas
-  ;; Creacion estatica de las mesas
-  create-mesas 1
-  [
-    setxy -10 2
-  ]
-
-  create-mesas 1
-  [
-    setxy -10 11
-  ]
-
-  create-mesas 1
-  [
-    setxy -1 11
-  ]
-
-  create-mesas 1
-  [
-    setxy -1 2
-  ]
-
-  create-mesas 1
-  [
-    setxy 9 2
-  ]
-
-  create-mesas 1
-  [
-    setxy -10 -7
-  ]
-
-  create-mesas 1
-  [
-    setxy 3 -7
-  ]
+  ;; Creacion estatica de las mesas **SI HACEMOS VARIAS LISTAS DE UBICACION PODEMOS OFRECER VARIAS OPCIONES**
+  crear_mesas
 
   ;; crear la caja
   set caja patches with [pxcor >= 11 and pxcor <= 14 and pycor >= -13 and pycor <= -5]
   ask caja [set pcolor red]
 
   ;; crear el baño
-  create-bannos 1
+  crear_bannos
+
+  ;;  This will make the outermost patches blue.  This is to prevent the turtles
+  ;;  from wrapping around the world.  Notice it uses the number of neighbor patches rather than
+  ;;  a location. This is better because it will allow you to change the behavior of the turtles
+  ;; by changing the shape of the world (and it is less mistake-prone)
+  ask patches with [count neighbors != 8] [ set pcolor magenta ]
+
+  ;; crear los empleados
+  crear_empleados
+
+
+  ;; crear los consumidores
+  create-consumidores cantidad-de-consumidores
   [
-    setxy 12 11
+    set color black
+    ;; el mas exigente se acerca a 0 y el menos exigente a 1
+    set tolerancia 0.7             ;;Los consumidores cuentan con una tolerancia medida en el rango de enteros [0,1] porcentual en la evalución de satisfaccion
+    set satisfaccion 80            ;;Los consumidores cuentan con una satisfacción medida en el rango de enteros [0,100]
+    set estado "Buscando mesa"     ;;Los consumidores comienzan buscando una mesa
+    set cuota-cervezas one-of [4 5 6 7 8 9 10]   ;;Se les inicializa con un número aleatorio de cervezas, para efectos de ir al baño
+    set label cuota-cervezas
+    set label-color red
+    set mi-mesa one-of mesas       ;;Al consumidor se le asigna una mesa
+    mover-a-un-espacio-vacio-de patches with [ pcolor = brown + 3 ]
   ]
 
-  ask mesas
-  [
-    set color blue set heading 0 set size 1
-    set capacidad 6      ;;Cada mesa tiene capacidad para 6 consumidores
-    set limpieza 6       ;;Cada mesa tiene un rango de limpieza medido entre 0 y 6
-    ;set hidden? true     ;;Se esconden las tortugas "mesa" para evitar el solapamiento entre mesas y consumidores
+  reset-ticks
+end
+
+;; Crea las mesas, como tortugas y visualmente
+to crear_mesas
+  set ubicacion-mesas [-10 2 -10 11 -10 -7 -1 11 -1 2 -1 -7 9 2]
+  set cant-mesas 7
+  let cont 0
+  repeat cant-mesas[
+    create-mesas 1[
+      setxy item cont ubicacion-mesas item (cont + 1) ubicacion-mesas
+      set color blue set heading 0 set size 1
+      set capacidad 6      ;;Cada mesa tiene capacidad para 6 consumidores
+      set limpieza 10       ;;Cada mesa tiene un rango de limpieza medido entre 0 y 10
+      ;set hidden? true     ;;Se esconden las tortugas "mesa" para evitar el solapamiento entre mesas y consumidores
     ;;Se crean las mesas como vecindarios de Moore con radio 3
-    let cercanos [list pxcor pycor] of patches with [abs pxcor <= 3 and abs pycor <= 3]
-    ask patches at-points cercanos [
+      let cercanos [list pxcor pycor] of patches with [abs pxcor <= 3 and abs pycor <= 3]
+      ask patches at-points cercanos [
         set pcolor blue
       ]
-    set label capacidad
-    set label-color red
+    ]
+    set cont cont + 2
   ]
 
-  ask bannos
-  [
+end
+
+to crear_bannos
+  set ubicacion-bannos [12 11]
+  create-bannos 1[
+    setxy item 0 ubicacion-bannos item 1 ubicacion-bannos
     set color green set heading 0 set size 2
     set capacidad 6      ;;Cada baño tiene capacidad para 6 consumidores
-    set limpieza 6       ;;Cada baño tiene un rango de limpieza medido entre 0 y 6
+    ;; el baño se encuenta limpio en 0 y sucio en 18
+    set limpieza 0       ;;Cada baño tiene un rango de limpieza medido entre 0 y 18 **POR CADA 18 USOS BAÑO SUCIO**
     set hidden? true     ;;Se esconden las tortugas "banno" para evitar el solapamiento entre baños y consumidores
     ;;Se crean los baños como vecindarios de Moore con radio 3
     let cercanos [list pxcor pycor] of patches with [abs pxcor <= 3 and abs pycor <= 3]
@@ -123,48 +129,43 @@ to setup
         set pcolor green
       ]
   ]
+end
 
-  ;;  This will make the outermost patches blue.  This is to prevent the turtles
-  ;;  from wrapping around the world.  Notice it uses the number of neighbor patches rather than
-  ;;  a location. This is better because it will allow you to change the behavior of the turtles
-  ;; by changing the shape of the world (and it is less mistake-prone)
-  ask patches with [count neighbors != 8] [ set pcolor blue ]
-
-  ;; crear los empleados
-  create-empleados cantidad-de-empleados
-  [
+to crear_empleados
+  create-empleados (cantidad-de-empleados - 1)[
     set color yellow
     set espera-limpiar-baño 0
+    set puesto 0
     mover-a-un-espacio-vacio-de patches with [ pcolor = brown + 3 ]
   ]
-
-  ;; crear los consumidores
-  create-consumidores cantidad-de-consumidores
-  [
-    set color black
-    set tolerancia 80              ;;Los consumidores cuentan con una tolerancia medida en el rango de enteros [0,100]
-    set satisfaccion 80            ;;Los consumidores cuentan con una satisfacción medida en el rango de enteros [0,100]
-    set estado "Buscando mesa"     ;;Los consumidores comienzan buscando una mesa
-    set cuota-cervezas random 10   ;;Se les inicializa con un número aleatorio de cervezas, para efectos de ir al baño
-    set label cuota-cervezas
-    set label-color red
-    set mi-mesa one-of mesas      ;;Al consumidor se le asigna una mesa
-
-    mover-a-un-espacio-vacio-de patches with [ pcolor = brown + 3 ]
-  ]
-
-  reset-ticks
 end
 
 to go
   ;socializar con otros consumidores en el mismo espacio
-  ask consumidores [ if any? other consumidores-here [ hablar ] ]
-  caminar
-  ;ir-al-baño
-  actualizar-satisfaccion
+  ;ask consumidores [ if any? other consumidores-here [ hablar ] ]
+  ;caminar
+  ask one-of consumidores [
+    set cuota-cervezas 0
+    set color red
+  ]
+  ir-al-baño
+  verificar-estados
+ ; actualizar-satisfaccion
   ;eliminar-insatisfechos
-  ask consumidores [ set label cuota-cervezas ]
   tick
+end
+
+to verificar-estados
+  ir-al-baño
+  ask consumidores [
+    if estado = "Buscando mesa"[
+      buscar-mesa
+    ]
+    if estado = "En el baño"[
+      set estado "Volver a mesa"
+      buscar-mesa
+    ]
+  ]
 end
 
 ;; Dirige al agente hacia el baño de manera natural, un paso a la vez
@@ -172,19 +173,16 @@ end
 ;; Basado en el ejemplo de codigo de la Biblioteca de Modelos llamado "Move Towards Target"
 to mover-al-baño [banno-seleccionado]
   ;;Se encamina al baño escogido
-  face banno-seleccionado
   ;;Si esta cerca del baño
-  ifelse distance banno-seleccionado < 3
-  [
     ;;Se posiciona en el baño
-    let espacio-mi-banno nobody
-    ask banno-seleccionado [ set espacio-mi-banno neighbors ]
-    move-to one-of espacio-mi-banno
-    set cuota-cervezas 0     ;;Se reanuda la cuenta de las cervezas para volver a ir al baño
-    set estado "En bano"     ;;Cambia el estado para determinar la proxima acción a tomar
+  let espacio-mi-banno nobody
+  ask banno-seleccionado [ set espacio-mi-banno neighbors ]
+  move-to one-of espacio-mi-banno
+  while [any? other turtles-here] [
+     fd 1
   ]
-  ;;Si no esta cerca del baño sigue caminando
-  [ fd 1 ]
+  set cuota-cervezas one-of [4 5 6  7 8 9 10]     ;;Se reanuda la cuenta de las cervezas para volver a ir al baño
+  set estado "En bano"     ;;Cambia el estado para determinar la proxima acción a tomar
 end
 
 to hablar
@@ -194,31 +192,44 @@ to hablar
   ask pareja [ set satisfaccion satisfaccion + 4 ]  ;;Igualmente mejora la satisfacción para el otro consumidor
 end
 
-to ir-al-baño
-    ;;Si ya ha tomado más de 4 cervezas necesita ir al baño, esto es un supuesto
-      let bannos-con-campo bannos with [capacidad > 0]   ;;Determina cuales baños tienen campo
-      if any? bannos-con-campo
-      [
-        let banno-escogido one-of bannos-con-campo
-        set estado "Llendo al bano"
-        ;;Se mantiene en el baño hasta que termina de posicionarse
-        while [estado = "Llendo al bano"]
-        [
-          mover-al-baño banno-escogido  ;;Se posiciona en el baño
-        ]
-        ;;Registra la actual capacidad del baño
-        ask banno-escogido [ (set capacidad capacidad - 1) (set limpieza limpieza - 1) ]
-      ]
+to actualizar-parametros-banno [banno-escogido]
+  ask banno-escogido [ (set capacidad capacidad - 1) (set limpieza limpieza + 1) (show limpieza) ]
+end
 
-;    [
-;      ;;Al terminar de posicionarse en el baño el consumidor vuelve a buscar mesa
-;      if estado = "En bano"
-;      [
-;        let banno-escogido one-of bannos
-;        ask banno-escogido [ set capacidad capacidad + 1 ]
-;        set estado "Buscando mesa"
-;      ]
-;    ]
+to ir-al-baño
+  ask consumidores[
+    ;;tengo que ir al baño?
+    if cuota-cervezas <= 0[
+      let bannos-con-campo bannos with [capacidad > 0]   ;;Determina cuales baños tienen campo
+      ifelse any? bannos-con-campo[
+        let banno-escogido one-of bannos-con-campo
+        set estado "En el baño"
+        ;;Se mantiene en el baño hasta que termina de posicionarse
+        mover-al-baño banno-escogido  ;;Se posiciona en el baño
+        ;;Registra la actual capacidad del baño
+        actualizar-parametros-banno banno-escogido
+        ifelse [limpieza] of banno-escogido <= floor (18 * tolerancia)[
+          set satisfaccion satisfaccion - floor (5 * abs (tolerancia - 1))
+        ]
+        [
+          set satisfaccion satisfaccion + floor (5 * tolerancia)
+        ]
+      ]
+      [
+        ifelse estado != "Esperando baño"[
+          setxy (item 0 ubicacion-bannos - 4) item 1 ubicacion-bannos
+          while [any? other turtles-here] [
+            fd 1
+          ]
+          set satisfaccion satisfaccion - floor (5 * abs (tolerancia - 1))
+          set estado "Esperando baño"
+        ]
+        [
+          set satisfaccion satisfaccion - floor (5 * abs (tolerancia - 1))
+        ]
+      ]
+    ]
+  ]
 end
 
 to actualizar-satisfaccion
@@ -242,8 +253,7 @@ end
 ;; this procedure is used to ensure that we only have one
 ;; turtle per patch.
 to mover-a-un-espacio-vacio-de [espacios]  ;; turtle procedure
-  if any? espacios
-  [
+  if any? espacios[
     ;move-to one-of espacios
     while [any? other turtles-here] [
       let espacio-escogido one-of espacios with [libre = 1]
@@ -267,61 +277,53 @@ to caminar
       ;;  cannot move onto.  Notice that we don't use any information on the turtle's
       ;;  heading or position.  Remember, patch-ahead 1 is the patch the turtle would be on
       ;;  if it moved forward 1 in its current heading.
-      ;ifelse patch-ahead 1 != nobody and [pcolor] of patch-ahead 1 = blue
-      ;[ lt random-float 360 ]   ;; We see a blue patch in front of us. Turn a random amount.
-      ;[ fd 1 ]                  ;; Otherwise, it is safe to move forward.
+      ifelse patch-ahead 1 != nobody and [pcolor] of patch-ahead 1 = blue
+      [ lt random-float 360 ]   ;; We see a blue patch in front of us. Turn a random amount.
+      [ fd 1 ]                  ;; Otherwise, it is safe to move forward.
 
-      ;print "caminar"
-      ;print mi-mesa
-      ifelse [capacidad] of mi-mesa > 0
-      [buscar-mesa]
-      [set mi-mesa one-of mesas]      ;;Al consumidor se le asigna una mesa
-      ;print mi-mesa
       ;;Cada vez que se desplaza el consumidor revisa su alrededor en busca de una mesa
-
+      buscar-mesa
     ]
   ]
   ;if ticks mod 10 = 0 and ticks > 0
   ;[set satisfaccion satisfaccion - 1]
 end
 
-to buscar-mesa ;[numero-mesa]
+to buscar-mesa ;[espacio]
   ask consumidores [
-    ;; move towards target.  once the distance is less than 1,
-    ;; use move-to to land exactly on the target.
-    ;print "buscar-mesa"
-    ;print mi-mesa
-    ;ifelse distance mi-mesa < 3
-    ;[
-      let espacio-mi-mesa nobody
-      ask mi-mesa [ set espacio-mi-mesa neighbors ]   ;;Simula el espacio de la mesa
-      move-to one-of espacio-mi-mesa
-      ask mi-mesa [set capacidad capacidad - 1 set label capacidad]
-      ifelse cuota-cervezas > 4
-      [
-        set estado "Por ir al baño"
-        set cuota-cervezas 0
-      ]
-      [
-        if "Por ir al baño" = estado
-        [
-          let banno-escogido one-of bannos
-          let espacios 0
-          ask banno-escogido [ set espacios neighbors ]
-          move-to one-of espacios
-          ask banno-escogido [ set capacidad capacidad + 1 ]
-          set estado "Buscando mesa"
+    if estado = "Buscando mesa"[
+        let mesas-vacias nobody
+        ask mesas [set mesas-vacias mesas with [capacidad > 0]]
+      ifelse any? mesas-vacias[
+        set mi-mesa min-one-of mesas-vacias [distance self]
+        let espacios-mesa nobody
+        ask mi-mesa [
+          set espacios-mesa neighbors
+          set capacidad capacidad - 1
         ]
+        move-to one-of espacios-mesa
+        while [any? other turtles-here] [
+            fd 1
+        ]
+        set estado "Esperando ser atendido"
+        set satisfaccion satisfaccion + floor (5 * tolerancia)
+      ][
+        set estado "Sin mesa"
+        set satisfaccion satisfaccion - floor (5 * abs (tolerancia - 1))
       ]
+    ]
 
-      ;print word "entrando en cercania" self
-      ;set estado "Esperando ser atendido"
-    ;]
-;    [
-;      ifelse patch-ahead 1 != nobody and [pcolor] of patch-ahead 1 != blue
-;      [ face mi-mesa ]
-;      [ lt random-float 360 fd 1 ]
-;    ]
+    if estado = "Volver a mesa"[
+      let espacios-mesa nobody
+      ask mi-mesa [
+          set espacios-mesa neighbors
+      ]
+      move-to one-of espacios-mesa
+      while [any? other turtles-here] [
+            fd 1
+      ]
+      set estado "Esperando ser atendido"
+    ]
   ]
 end
 @#$#@#$#@
@@ -393,9 +395,9 @@ SLIDER
 110
 cantidad-de-empleados
 cantidad-de-empleados
-0
+1
 10
-3.0
+1.0
 1
 1
 NIL
@@ -408,9 +410,9 @@ SLIDER
 152
 cantidad-de-consumidores
 cantidad-de-consumidores
-0
+1
 100
-4.0
+45.0
 1
 1
 NIL
@@ -442,6 +444,21 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+8
+161
+180
+194
+exigencia
+exigencia
+0.1
+1
+0.5
+0.1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## ¿Que es el modelo?
