@@ -7,6 +7,7 @@ globals[
   ubicacion-caja   ;;ubicacion de la caja
   cant-mesas       ;;cantidad de mesas
   insatisfechos    ;;cantidad de insatisfechos
+  crecimiento      ;;indica cuando debe crecer la cantidad de clientes
 ]
 
 breed[consumidores consumidor]
@@ -54,6 +55,7 @@ to setup
   set-default-shape consumidores "person"
   set-default-shape empleados "person"
   set insatisfechos 0
+  set crecimiento 50
 
   ;; crear las mesas
   ;; Creacion estatica de las mesas **SI HACEMOS VARIAS LISTAS DE UBICACION PODEMOS OFRECER VARIAS OPCIONES**
@@ -166,6 +168,7 @@ to go
 end
 
 to verificar-estados
+  crecer
   ask consumidores [
     if estado = "Buscando mesa"[
       buscar-mesa
@@ -425,7 +428,30 @@ to-report plot-satisfaccion
     report cont_satis / cantidad-de-consumidores
 end
 
+to crecer
+  if ticks = crecimiento [
+    set crecimiento crecimiento + 50
+    let taza_crecimiento floor (count consumidores * 0.05)
+    repeat taza_crecimiento[
+      let temporal one-of consumidores
+      ask temporal [
+        hatch 1 [
+          set color black
+          ;; el mas exigente se acerca a 0 y el menos exigente a 1
+          set tolerancia exigencia             ;;Los consumidores cuentan con una tolerancia medida en el rango de enteros [0,1] porcentual en la evalución de satisfaccion
+          set satisfaccion 80            ;;Los consumidores cuentan con una satisfacción medida en el rango de enteros [0,100]
+          set estado "Buscando mesa"     ;;Los consumidores comienzan buscando una mesa
+          set cuota-cervezas one-of [4 5 6 7 8 9 10]   ;;Se les inicializa con un número aleatorio de cervezas, para efectos de ir al baño
+          set label-color red
+          set mi-mesa nobody       ;;Al consumidor se le asigna una mesa
+          set sed one-of [4 5 6 7 8 9 10] ;; se les inicializa con numero aleatorio de sed
+          mover-a-un-espacio-vacio-de patches with [ pcolor = brown + 3 ]]
+      ]
+    ]
 
+  ]
+
+end
 
 
 
@@ -525,8 +551,8 @@ TEXTBOX
 842
 29
 992
-119
-Consumidor: negro\nEmpleado: amarillo\n\nMesas: azul\nCaja: rojo\nBaño: verde
+149
+Consumidor: negro\nEmpleado: amarillo\nConsumidor esperando atención: anaranjado\n\nMesas: azul\nCaja: gris\nBaño: verde
 12
 0.0
 1
@@ -565,9 +591,9 @@ HORIZONTAL
 
 PLOT
 816
-142
+151
 1271
-494
+518
 Satisfaccion
 Tiempo
 Satisfaccion
@@ -618,6 +644,17 @@ MONITOR
 331
 insatisfechos
 insatisfechos
+17
+1
+11
+
+MONITOR
+121
+287
+196
+332
+poblacion
+count consumidores
 17
 1
 11
