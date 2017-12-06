@@ -1,8 +1,7 @@
-;; "Buscando mesa" "En el baño" "Esperando baño" "Esperando ser atendido"
+;; "Buscando mesa" "En el baño" "Esperando baño" "Esperando ser atendido" ""
 
 globals[
   caja             ;;Punto de cobro
-  ordenes          ;;lista de ordenes
   ubicacion-mesas  ;;lista de la ubicacion de las mesas
   ubicacion-bannos ;;lista de la ubicacion de los baños
   ubicacion-caja   ;;ubicacion de la caja
@@ -20,6 +19,7 @@ consumidores-own[
   satisfaccion
   tolerancia                   ;;Dependiendo de que tan tolerante es el consumidor, tiene mayor o menor impacto los eventos negativos en su atencion
   cuota-cervezas               ;;Indica cuando un consumidor debe ir al banno
+  sed                          ;;Indica cuando debe pedir 0-10 0 es recien servido
   mi-mesa                      ;;Mesa en la que el consumidor esta ubicado
 ]
 
@@ -27,6 +27,7 @@ empleados-own[
   espera-limpiar-baño          ;;Indica cada cuantos ticks limpia el baño el empleado
   puesto                       ;;Si es 0 es salonero, si es 1 es cajero
   mesas-asignadas              ;;Las mesas asignadas para servir
+  estado                       ;; Limpiar baño y servir
 ]
 
 mesas-own[
@@ -58,7 +59,7 @@ to setup
 
   ;; crear la caja
   set caja patches with [pxcor >= 11 and pxcor <= 14 and pycor >= -13 and pycor <= -5]
-  ask caja [set pcolor red]
+  ask caja [set pcolor gray]
 
   ;; crear el baño
   crear_bannos
@@ -78,13 +79,13 @@ to setup
   [
     set color black
     ;; el mas exigente se acerca a 0 y el menos exigente a 1
-    set tolerancia 0.7             ;;Los consumidores cuentan con una tolerancia medida en el rango de enteros [0,1] porcentual en la evalución de satisfaccion
+    set tolerancia exigencia             ;;Los consumidores cuentan con una tolerancia medida en el rango de enteros [0,1] porcentual en la evalución de satisfaccion
     set satisfaccion 80            ;;Los consumidores cuentan con una satisfacción medida en el rango de enteros [0,100]
     set estado "Buscando mesa"     ;;Los consumidores comienzan buscando una mesa
     set cuota-cervezas one-of [4 5 6 7 8 9 10]   ;;Se les inicializa con un número aleatorio de cervezas, para efectos de ir al baño
-    set label cuota-cervezas
     set label-color red
-    set mi-mesa one-of mesas       ;;Al consumidor se le asigna una mesa
+    set mi-mesa nobody       ;;Al consumidor se le asigna una mesa
+    set sed one-of [4 5 6 7 8 9 10] ;; se les inicializa con numero aleatorio de sed
     mover-a-un-espacio-vacio-de patches with [ pcolor = brown + 3 ]
   ]
 
@@ -100,7 +101,7 @@ to crear_mesas
     create-mesas 1[
       setxy item cont ubicacion-mesas item (cont + 1) ubicacion-mesas
       set color blue set heading 0 set size 1
-      set capacidad 6      ;;Cada mesa tiene capacidad para 6 consumidores
+      set capacidad capacidad-mesas      ;;Cada mesa tiene capacidad para 6 consumidores
       set limpieza 10       ;;Cada mesa tiene un rango de limpieza medido entre 0 y 10
       ;set hidden? true     ;;Se esconden las tortugas "mesa" para evitar el solapamiento entre mesas y consumidores
     ;;Se crean las mesas como vecindarios de Moore con radio 3
@@ -119,7 +120,7 @@ to crear_bannos
   create-bannos 1[
     setxy item 0 ubicacion-bannos item 1 ubicacion-bannos
     set color green set heading 0 set size 2
-    set capacidad 6      ;;Cada baño tiene capacidad para 6 consumidores
+    set capacidad capacidad-baño      ;;Cada baño tiene capacidad para 6 consumidores
     ;; el baño se encuenta limpio en 0 y sucio en 18
     set limpieza 0       ;;Cada baño tiene un rango de limpieza medido entre 0 y 18 **POR CADA 18 USOS BAÑO SUCIO**
     set hidden? true     ;;Se esconden las tortugas "banno" para evitar el solapamiento entre baños y consumidores
@@ -132,11 +133,18 @@ to crear_bannos
 end
 
 to crear_empleados
-  create-empleados (cantidad-de-empleados - 1)[
+  create-empleados cantidad-de-empleados[
     set color yellow
-    set espera-limpiar-baño 0
+    set espera-limpiar-baño one-of [7 8 9]
     set puesto 0
+    set estado "Limpiando baño"
     mover-a-un-espacio-vacio-de patches with [ pcolor = brown + 3 ]
+  ]
+
+  ask one-of empleados [
+    set puesto 1
+    setxy 13 -9
+    set color magenta
   ]
 end
 
@@ -144,28 +152,42 @@ to go
   ;socializar con otros consumidores en el mismo espacio
   ;ask consumidores [ if any? other consumidores-here [ hablar ] ]
   ;caminar
-  ask one-of consumidores [
-    set cuota-cervezas 0
-    set color red
+  ask consumidores [
+    set sed sed + 1
+    set label satisfaccion
   ]
-  ir-al-baño
+  ask empleados [
+    set espera-limpiar-baño espera-limpiar-baño - 1
+  ]
   verificar-estados
- ; actualizar-satisfaccion
+  ;actualizar-satisfaccion
   ;eliminar-insatisfechos
   tick
 end
 
 to verificar-estados
-  ir-al-baño
   ask consumidores [
     if estado = "Buscando mesa"[
       buscar-mesa
     ]
     if estado = "En el baño"[
+      ask bannos [set capacidad capacidad + 1]
       set estado "Volver a mesa"
       buscar-mesa
     ]
   ]
+
+  ask empleados [
+    if estado = "Limpiando baño"[
+      set estado "Servir"
+    ]
+  ]
+  limpiar-baño
+  ir-al-baño
+  pedir
+  servir
+  eliminar-insatisfechos
+
 end
 
 ;; Dirige al agente hacia el baño de manera natural, un paso a la vez
@@ -181,8 +203,7 @@ to mover-al-baño [banno-seleccionado]
   while [any? other turtles-here] [
      fd 1
   ]
-  set cuota-cervezas one-of [4 5 6  7 8 9 10]     ;;Se reanuda la cuenta de las cervezas para volver a ir al baño
-  set estado "En bano"     ;;Cambia el estado para determinar la proxima acción a tomar
+  set cuota-cervezas one-of [4 5 6 7 8 9 10]     ;;Se reanuda la cuenta de las cervezas para volver a ir al baño
 end
 
 to hablar
@@ -193,11 +214,12 @@ to hablar
 end
 
 to actualizar-parametros-banno [banno-escogido]
-  ask banno-escogido [ (set capacidad capacidad - 1) (set limpieza limpieza + 1) (show limpieza) ]
+  ask banno-escogido [ (set capacidad capacidad - 1) (set limpieza limpieza + 1)]
 end
 
 to ir-al-baño
   ask consumidores[
+    show cuota-cervezas
     ;;tengo que ir al baño?
     if cuota-cervezas <= 0[
       let bannos-con-campo bannos with [capacidad > 0]   ;;Determina cuales baños tienen campo
@@ -210,12 +232,10 @@ to ir-al-baño
         actualizar-parametros-banno banno-escogido
         ifelse [limpieza] of banno-escogido <= floor (18 * tolerancia)[
           set satisfaccion satisfaccion - floor (5 * abs (tolerancia - 1))
-        ]
-        [
+        ][
           set satisfaccion satisfaccion + floor (5 * tolerancia)
         ]
-      ]
-      [
+      ][
         ifelse estado != "Esperando baño"[
           setxy (item 0 ubicacion-bannos - 4) item 1 ubicacion-bannos
           while [any? other turtles-here] [
@@ -223,8 +243,7 @@ to ir-al-baño
           ]
           set satisfaccion satisfaccion - floor (5 * abs (tolerancia - 1))
           set estado "Esperando baño"
-        ]
-        [
+        ][
           set satisfaccion satisfaccion - floor (5 * abs (tolerancia - 1))
         ]
       ]
@@ -242,9 +261,10 @@ to actualizar-satisfaccion
 end
 
 to eliminar-insatisfechos
-  let consumidores-insatisfechos consumidores with [satisfaccion <= 30]   ;;Determina cuales consumidores estan muy insatisfechos
+  let consumidores-insatisfechos consumidores with [satisfaccion <= 0]   ;;Determina cuales consumidores estan muy insatisfechos
   if any? consumidores-insatisfechos
   [ask consumidores-insatisfechos [die]]  ;;elimina los consumidores insatisfechos para simular el abandono del bar por parte de los consumidores
+
 end
 
 ;; In this model it doesn't really matter exactly which patch
@@ -290,6 +310,7 @@ to caminar
 end
 
 to buscar-mesa ;[espacio]
+
   ask consumidores [
     if estado = "Buscando mesa"[
         let mesas-vacias nobody
@@ -305,27 +326,106 @@ to buscar-mesa ;[espacio]
         while [any? other turtles-here] [
             fd 1
         ]
-        set estado "Esperando ser atendido"
+        set estado "Pedir"
         set satisfaccion satisfaccion + floor (5 * tolerancia)
       ][
         set estado "Sin mesa"
         set satisfaccion satisfaccion - floor (5 * abs (tolerancia - 1))
+        mover-a-un-espacio-vacio-de patches with [ pcolor = brown + 3 ]
       ]
     ]
 
     if estado = "Volver a mesa"[
-      let espacios-mesa nobody
-      ask mi-mesa [
+      ifelse mi-mesa != nobody [
+        let espacios-mesa nobody
+        ask mi-mesa [
           set espacios-mesa neighbors
+        ]
+        move-to one-of espacios-mesa
+        while [any? other turtles-here] [
+          fd 1
+        ]
+        set estado "Pedir"
+      ][
+        mover-a-un-espacio-vacio-de patches with [ pcolor = brown + 3 ]
+        set estado "Pedir"
       ]
-      move-to one-of espacios-mesa
-      while [any? other turtles-here] [
-            fd 1
-      ]
-      set estado "Esperando ser atendido"
     ]
   ]
 end
+
+to pedir
+  ask consumidores [
+    if estado = "Pedir"[
+      set satisfaccion satisfaccion - 1)
+    ]
+    if sed >= 10[;; tiene sed?
+      set estado "Pedir"
+      set color orange
+    ]
+  ]
+
+end
+
+to servir
+  ask empleados [
+    if puesto = 0 and estado = "Servir"[
+      let ordenes nobody
+      ask consumidores [set ordenes consumidores with [color = orange]]
+
+      if any? ordenes [
+        let cliente-escogido one-of ordenes
+        let mesa-cliente nobody
+        ask cliente-escogido [
+          set sed 0
+          set color black
+          set satisfaccion satisfaccion + floor (5 * tolerancia)
+          set mesa-cliente mi-mesa
+          set cuota-cervezas cuota-cervezas - 1
+        ]
+
+        if mesa-cliente != nobody[
+          let espacios-mesa nobody
+          ask mesa-cliente [set espacios-mesa neighbors]
+          move-to one-of espacios-mesa
+          while [any? other turtles-here] [
+            fd 1
+          ]
+        ]
+      ]
+    ]
+  ]
+
+end
+
+to limpiar-baño
+  ask empleados [
+    if puesto = 0 and espera-limpiar-baño <= 0 [
+      let bannos-sucios bannos with [limpieza >= 18]
+      if any? bannos-sucios [
+        let espacio-mi-banno nobody
+        ask bannos-sucios [ set espacio-mi-banno neighbors set limpieza 0 ]
+        move-to one-of espacio-mi-banno
+        while [any? other turtles-here] [
+          fd 1
+        ]
+        set espera-limpiar-baño one-of [5 6 7 8]
+        set estado "Limpiando baño"
+      ]
+    ]
+  ]
+end
+
+to-report plot-satisfaccion
+  let cont_satis sum [satisfaccion] of consumidores
+    report cont_satis / cantidad-de-consumidores
+end
+
+
+
+
+
+
 @#$#@#$#@
 GRAPHICS-WINDOW
 298
@@ -390,14 +490,14 @@ NIL
 
 SLIDER
 9
-77
-227
-110
+81
+258
+114
 cantidad-de-empleados
 cantidad-de-empleados
 1
 10
-1.0
+8.0
 1
 1
 NIL
@@ -412,17 +512,17 @@ cantidad-de-consumidores
 cantidad-de-consumidores
 1
 100
-45.0
+46.0
 1
 1
 NIL
 HORIZONTAL
 
 TEXTBOX
-145
-366
-295
-456
+842
+29
+992
+119
 Consumidor: negro\nEmpleado: amarillo\n\nMesas: azul\nCaja: rojo\nBaño: verde
 12
 0.0
@@ -446,16 +546,64 @@ NIL
 1
 
 SLIDER
-8
-161
-180
-194
+9
+160
+260
+193
 exigencia
 exigencia
 0.1
 1
 0.5
 0.1
+1
+NIL
+HORIZONTAL
+
+PLOT
+816
+142
+1271
+494
+Satisfaccion
+Tiempo
+Satisfaccion
+0.0
+1.0
+0.0
+100.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -13791810 true "" "plot plot-satisfaccion"
+
+SLIDER
+8
+200
+259
+233
+capacidad-baño
+capacidad-baño
+0
+20
+17.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+7
+240
+259
+273
+capacidad-mesas
+capacidad-mesas
+1
+10
+6.0
+2
 1
 NIL
 HORIZONTAL
