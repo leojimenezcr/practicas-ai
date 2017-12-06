@@ -623,42 +623,79 @@ insatisfechos
 11
 
 @#$#@#$#@
-## ¿Que es el modelo?
+## ¿Qué es el modelo?
 
-El modelo "Bar" busca mostrar las implicaciones de la cantidad de mesas dentro de un bar, así como la cantidad de baños y empleados, en la satisfacción de sus clientes, considerando la limpieza de las mesas y los baños como factor importante para influenciar la satisfacción de los clientes del bar, además se consideran los tiempos de atención, el tiempo de espera de los consumidores del bar para recibir su pedido; por otro lado, también considera el impacto de la socialización en la satisfacción de los clientes.
+El modelo "Bar" simula un establecimiento comercial, con elementos físicos como mesas, baños y la caja de cobro; además consumidores que toman asiento en una mesa, piden cervezas y utilizan el baño; los consumidores son atendidos por empleados que sirven la cerveza, además limpian el baño.
 
-## Como funciona
+El objetivo es medir y mejorar el nivel de satisfacción de los consumidores con determinadas configuraciones, como la cantidad de mesas o empleados. Diferentes situaciones como el tiempo de espera por una mesa, el tiempo de espera por una cerveza, la oportunidad de socializar o el estado de limpieza del baño influirán en su grado de sastifacción.
 
-Los consumidores comienzan buscando una mesa, para lo cual se desplazan por el entorno respetando las "paredes" del bar y las mesas, cada consumidor debe ir al baño cada vez que ha tomado 4 o más cervezas, y cada vez que va al baño esa cuenta se reinicia, luego de ir al baño los consumidores vuelven a buscar su mesa, cada vez que los consumidores se desplazan por el entorno tienen la oportunidad de socializar con los otros consumidores cerca suyo, aumentando su satisfacción. En cuanto al tiempo que le toma a un consumidor encontrar una mesa, esto disminuye su satisfacción, así como la limpieza de la misma y de los baños, como también la espera para ser atendido por un empleado.
-Los empleados atienden los pedidos de los consumidores, y cuando no tienen pedidos pendientes limpian los baños y las mesas, periodicamente, 
+## ¿Cómo trabaja?
 
-## Como se usa
+Los consumidores entran al bar y buscan una mesa, para lo cual se desplazan por el entorno respetando las "paredes" y mesas. Después de ingerir unas cuantas cervezas deberán ir al baño, el cuál puede estar ocupado lo que implicará esperar. Cada vez que van al baño, este se encucia, la cuenta de cervezas para ir al baño se reinicia y los consumidores vuelven a buscar su mesa. Cada vez que los consumidores se desplazan por el entorno tienen la oportunidad de socializar con otros consumidores cercanos, aumentando su satisfacción.
 
-En la interfaz gráfica se puede determinar la cantidad de empleados y consumidores deseados en la simulación, lo que permite ver que impacto tiene el incrementar los empleados.
+Si un consumidor espera demasiado por una mesa libre, encuentra el baño demasiado sucio o esperan demasiado para ser atendidos por un empleado se irá sintiendo insatisfecho gradualmente al punto que podría abandonar el bar. Después de unas cuantas cervezas el consumidor abandonará el establecimiento.
 
-## THINGS TO NOTICE
+Los empleados atienden los pedidos de los consumidores y limpian los baños periodicamente.
 
-(suggested things for the user to notice while running the model)
+## ¿Cómo se usa?
 
-## THINGS TO TRY
+Configure el entorno de acuerdo a las condiciones de simulación, coloque las mesas (modificando la variable 'ubicacion-mesas' en el código), determine la cantidad inicial de consumidores en el bar y la exigencia de los mismos. A mayor exigencia más probable que se sientan insatisfechos con diferentes circustancias. Asigne también la cantidad de empleados que atenderán a los consumidores. Esto moviendo los sliders de la interfaz.
 
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
+Presione el botón "Setup" para aplicar la configuración inicial.
 
-## EXTENDING THE MODEL
+Presione el botón "Step" para ejecutar un ciclo de simulación. En un ciclo los consumidores encontrarán o quedarán a la espera de una mesa, irán o esperarán por el baño, aumentará su sed y se modificará su satisfacción. Además los empleados atenderán un consumidor o limpiarán el baño.
 
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
+Presione el botón "Go" para ejecutar la simulación contínuamente.
 
-## NETLOGO FEATURES
+Para detener la simulación presione nuevamente el botón "Go".
 
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+## Cosas a considerar
 
-## RELATED MODELS
+Observe como varía el grado de sasisfacción en el tiempo.
 
-(models in the NetLogo Models Library and elsewhere which are of related interest)
+Ejecutando la simulación con el botón paso a paso "Step", o disminuyendo la velocidad, le permitirá observar con más determiniento. Como qué tanto se espera en el baño o que tanto se espera por una cerveza.
 
-## CREDITS AND REFERENCES
+Los consumidores en espera por una cerveza se tornarán de color naranja, los consumidores que esperan a que se libere un espacio en el baño se colocarán junto a este.
 
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+## Cosas a intentar
+
+Modifique la configuración y ejecute nuevamente la simulación.
+
+Observe si esta nueva configuración mejora la satisfacción de los clientes.
+
+La configuración óptima del establecimiento será la que genere un mayor grado de satisfacción.
+
+## ¿Cómo extender el modelo?
+
+Difentes elementos podrían aumentar la precisión de la simulación, tantos como los que se encuentran en un bar. Además es posible mejorar los detalles de la animación.
+
+1. Actualmente los agentes se mueven a su destino en un solo ciclo. Animar el paso a paso permitiría observar con más facilidad la interacción con el medio.
+2. Si se añade el choque entre personas, permitiría simular la satisfacción de acuerdo a la cantidad de gente y posición de los muebles.
+3. El choque entre personas también puede simular la probalidad de socializar.
+4. Simular la espera para ser cobrado en la caja puede ser un parámetro más para modificar la satisfacción.
+5. La configuración de mesas puede mejorarse, de manera que sea más sencillo para el usuario.
+6. La cantidad de cervezas consumidas podría usarse no solo para determinar cuando se va al baño o cuando se está satisfecho, si no que podría simular embriaguez y por tanto modificación de su comportamiento.
+
+## Modelos relacionados
+
+Algunas de las funciones son similares a otros modelos de la Biblioteca de Modelos de Netlogo:
+
+- La forma de mover agentes a su destino está basado en el modelo "Move Towards Target".
+- La función para buscar mesa está basada en el modelo "Look Ahead Example".
+
+## Créditos y referencias
+
+Diseñado y desarrollado por:
+
+- Daniel Orozco
+- Fanny Porras
+- Leonardo Jiménez
+
+Escuela de Ciencias de la Computación e Informática de la Universidad de Costa Rica.
+
+Publicado bajo licencia GPLv3.
+
+https://github.com/leojimenezcr/practicas-ai
 @#$#@#$#@
 default
 true
