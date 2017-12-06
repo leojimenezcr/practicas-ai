@@ -6,6 +6,7 @@ globals[
   ubicacion-bannos ;;lista de la ubicacion de los baños
   ubicacion-caja   ;;ubicacion de la caja
   cant-mesas       ;;cantidad de mesas
+  insatisfechos    ;;cantidad de insatisfechos
 ]
 
 breed[consumidores consumidor]
@@ -52,6 +53,7 @@ to setup
   ]
   set-default-shape consumidores "person"
   set-default-shape empleados "person"
+  set insatisfechos 0
 
   ;; crear las mesas
   ;; Creacion estatica de las mesas **SI HACEMOS VARIAS LISTAS DE UBICACION PODEMOS OFRECER VARIAS OPCIONES**
@@ -149,9 +151,7 @@ to crear_empleados
 end
 
 to go
-  ;socializar con otros consumidores en el mismo espacio
-  ;ask consumidores [ if any? other consumidores-here [ hablar ] ]
-  ;caminar
+  if not any? consumidores [stop]
   ask consumidores [
     set sed sed + 1
     set label satisfaccion
@@ -233,7 +233,7 @@ to ir-al-baño
         ifelse [limpieza] of banno-escogido <= floor (18 * tolerancia)[
           set satisfaccion satisfaccion - floor (5 * abs (tolerancia - 1))
         ][
-          set satisfaccion satisfaccion + floor (5 * tolerancia)
+          set satisfaccion satisfaccion + floor (15 * tolerancia)
         ]
       ][
         ifelse estado != "Esperando baño"[
@@ -244,7 +244,7 @@ to ir-al-baño
           set satisfaccion satisfaccion - floor (5 * abs (tolerancia - 1))
           set estado "Esperando baño"
         ][
-          set satisfaccion satisfaccion - floor (5 * abs (tolerancia - 1))
+          set satisfaccion satisfaccion - 1
         ]
       ]
     ]
@@ -253,8 +253,7 @@ end
 
 to actualizar-satisfaccion
   let consumidores-buscando-mesa consumidores with [estado = "Buscando mesa"]  ;;Determina cuales consumidores se encuentran buscando mesa
-  if any? consumidores-buscando-mesa
-  [
+  if any? consumidores-buscando-mesa[
     if ticks mod 10 = 0    ;;Por cada 10 ticks que el usuario pase buscando mesa se decrementa la satisfacción en 4 unidades
     [ask consumidores-buscando-mesa [set satisfaccion satisfaccion - 4]]
   ]
@@ -262,8 +261,13 @@ end
 
 to eliminar-insatisfechos
   let consumidores-insatisfechos consumidores with [satisfaccion <= 0]   ;;Determina cuales consumidores estan muy insatisfechos
-  if any? consumidores-insatisfechos
-  [ask consumidores-insatisfechos [die]]  ;;elimina los consumidores insatisfechos para simular el abandono del bar por parte de los consumidores
+
+  if any? consumidores-insatisfechos [
+    set insatisfechos insatisfechos + count consumidores-insatisfechos
+    ask consumidores-insatisfechos [die]
+  ]
+  show "eliminar"
+  ;;elimina los consumidores insatisfechos para simular el abandono del bar por parte de los consumidores
 
 end
 
@@ -357,7 +361,7 @@ end
 to pedir
   ask consumidores [
     if estado = "Pedir"[
-      set satisfaccion satisfaccion - 1)
+      set satisfaccion satisfaccion - 1
     ]
     if sed >= 10[;; tiene sed?
       set estado "Pedir"
@@ -379,7 +383,7 @@ to servir
         ask cliente-escogido [
           set sed 0
           set color black
-          set satisfaccion satisfaccion + floor (5 * tolerancia)
+          set satisfaccion satisfaccion + floor (15 * tolerancia)
           set mesa-cliente mi-mesa
           set cuota-cervezas cuota-cervezas - 1
         ]
@@ -420,7 +424,6 @@ to-report plot-satisfaccion
   let cont_satis sum [satisfaccion] of consumidores
     report cont_satis / cantidad-de-consumidores
 end
-
 
 
 
@@ -497,7 +500,7 @@ cantidad-de-empleados
 cantidad-de-empleados
 1
 10
-8.0
+9.0
 1
 1
 NIL
@@ -607,6 +610,17 @@ capacidad-mesas
 1
 NIL
 HORIZONTAL
+
+MONITOR
+13
+286
+114
+331
+insatisfechos
+insatisfechos
+17
+1
+11
 
 @#$#@#$#@
 ## ¿Que es el modelo?
